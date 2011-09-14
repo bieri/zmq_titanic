@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Titanic_C++", "Titanic_C++\Titanic_C++.vcxproj", "{C933702B-8F96-4230-ADB7-775001BAE22A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Debug|x64 = Debug|x64
+		Release|Win32 = Release|Win32
+		Release|x64 = Release|x64
+		WithOpenPGM|Win32 = WithOpenPGM|Win32
+		WithOpenPGM|x64 = WithOpenPGM|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C933702B-8F96-4230-ADB7-775001BAE22A}.Debug|Win32.ActiveCfg = Debug|x64
+		{C933702B-8F96-4230-ADB7-775001BAE22A}.Debug|Win32.Build.0 = Debug|x64
+		{C933702B-8F96-4230-ADB7-775001BAE22A}.Debug|x64.ActiveCfg = Debug|x64
+		{C933702B-8F96-4230-ADB7-775001BAE22A}.Debug|x64.Build.0 = Debug|x64
+		{C933702B-8F96-4230-ADB7-775001BAE22A}.Release|Win32.ActiveCfg = Release|Win32
+		{C933702B-8F96-4230-ADB7-775001BAE22A}.Release|Win32.Build.0 = Release|Win32
+		{C933702B-8F96-4230-ADB7-775001BAE22A}.Release|x64.ActiveCfg = Release|Win32
+		{C933702B-8F96-4230-ADB7-775001BAE22A}.Release|x64.Build.0 = Release|Win32
+		{C933702B-8F96-4230-ADB7-775001BAE22A}.WithOpenPGM|Win32.ActiveCfg = Release|x64
+		{C933702B-8F96-4230-ADB7-775001BAE22A}.WithOpenPGM|x64.ActiveCfg = Release|x64
+		{C933702B-8F96-4230-ADB7-775001BAE22A}.WithOpenPGM|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
