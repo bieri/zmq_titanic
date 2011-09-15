@@ -40,11 +40,12 @@ worker_t::worker_t(){
 	this->service=NULL;
 	this->expiry=0;
 }
-worker_t::worker_t(string identity,zframe_t* addy,service_t* svc,int expiry){
+worker_t::worker_t(string identity,zframe_t* addy,service_t* svc,int64_t heartbeat_ivl){
 	this->identity.assign(identity);
 	this->address = addy;
 	this->service = svc;
-	this->expiry = expiry;
+	this->expiry = zclock_time() + expiry;
+	this->heartbeat_ivl = expiry;
 }
 worker_t::~worker_t(){
 	this->identity.erase();
@@ -123,12 +124,44 @@ void titanic_dispatcher::Start(){
     //}
 }
 
-void titanic_dispatcher::Handle_HeartBeat(zframe_t* address,zmsg_t* msg){
-	
+void titanic_dispatcher::Handle_HeartBeat(zframe_t* address,string svcname){
+	service_t* svc = (this->Svcs.find(svcname))->second;
+	const char* w_name = (const char*) zframe_strdup(address);
+	worker_t* wrk =(worker_t*) zlist_first(svc->avail_workers);
+	while(wrk){
+		const char* w_id = wrk->identity.c_str();
+		
+		if(strcmp(w_id,w_name )==0){
+			wrk->expiry = zclock_time() + wrk->heartbeat_ivl;
+		}
+		wrk = (worker_t*) zlist_next(svc->avail_workers);
+		continue;
+
+	}
 }
 void titanic_dispatcher::Handle_Ready(zframe_t* address,string svcname){
 	worker_add(svcname,address,100);
 }
+
+void titanic_dispatcher::Enqueue(string uuid,string svc,zmsg_t* opaque_frms){
+	if(!this->Service_Avail(svc)){
+		//need to send a client back a 404. or something. but this should more than likely be checked
+		//before we get to here.
+
+	}
+	service_t* serv = this->Svcs.find(svc)->second;
+	if(serv->avail_count==0){
+		//We queue it and expect someone to pick it up later from the msg directory.
+		zlist_append(serv->requests, (void*)uuid.c_str());
+		zmsg_destroy(&opaque_frms);
+	}
+	else{
+		worker_t* wrk = this->worker_get(serv);
+		this->work_status_set(wrk->identity,uuid);
+		this->send_work(wrk,TMSG_TYPE_REQUEST,NULL,opaque_frms);
+	}
+}
+
 bool titanic_dispatcher::Service_Avail(string name){
 	return (this->Svcs.find(name)!=Svcs.end());
 }
@@ -140,10 +173,7 @@ void titanic_dispatcher::service_add(string name){
 	service_t* sv = new service_t(name);
 	service_add(sv);
 }
-
-
-//This is called on regular intervals to make sure that we dont have anything thats dead
-//and have it accidently get work.
+//This is called only when we are destructing this bad boy.
 void titanic_dispatcher::services_purge(void){
 	Hash_str_svc::iterator svcs_iter = this->Svcs.begin();
 	service_t* service;
@@ -165,27 +195,43 @@ void titanic_dispatcher::services_purge(void){
         
 	}
 }
-
 void titanic_dispatcher::service_del(string name){
 	//string key = name->substr(0,name->length()); 
 	service_t* svc = (this->Svcs.find(name) ->second);
+	
+	//Clean up the workers.
+	int i = 0;
+	while(svc->avail_count !=0){
+		worker_t* w = (worker_t*) zlist_next(svc->avail_workers);
+		this->worker_del(w);
+	}
 	this->Svcs.erase(name);
 	
 	delete svc;
 	
 }
+
+//this is called before work is dispatched to ensure we dont have any dead workers.
+worker_t* titanic_dispatcher::worker_get(service_t* serv){
+	worker_t* wrk =  (worker_t*) zlist_pop( serv->avail_workers);
+	serv->avail_count--;
+	return wrk;
+}
 void titanic_dispatcher::workers_purge(zlist_t* workers){
 	worker_t *worker = (worker_t *) zlist_first (workers);
 	//This whole thing doesnt look like it ever gets to the end of the list
 	//double check this whole thing.
+	int64_t zc = zclock_time();
     while (worker) {
-        if (zclock_time () < worker->expiry)
-            break;                  //  Worker is alive, we're done here
-        if (this->Verbose)
-            zclock_log ("I: deleting expired worker: %s",
-                worker->identity);
+        if (zc  < worker->expiry){
+			worker = (worker_t*) zlist_next(workers);
+            continue;                  //  Worker is alive, we're done here
+		}
+        if (this->Verbose){
+            zclock_log ("I: deleting expired worker: %s",worker->identity);
+		}
 		this->worker_del(worker);
-        worker = (worker_t *) zlist_first (workers);
+        worker = (worker_t *) zlist_next (workers);
     }
 }
 void titanic_dispatcher::worker_del(worker_t* worker){
@@ -205,6 +251,9 @@ void titanic_dispatcher::worker_del(worker_t* worker){
 	key.assign(worker->identity);
 	this->Wrkrs.erase(key);
 	}
+	
+	//Do some memory management.
+	delete worker;
 }
 void titanic_dispatcher::worker_add(string svcname,zframe_t* addr,int hbeatby){
 	
@@ -216,7 +265,7 @@ void titanic_dispatcher::worker_add(string svcname,zframe_t* addr,int hbeatby){
 	service_t* svc = (this->Svcs.find(key) ->second);
 	char* w_name =zframe_strdup(addr);
 	string wrk_id = string(w_name);
-	worker_t* n_wrk = new worker_t(wrk_id,addr,svc,100);
+	worker_t* n_wrk = new worker_t(wrk_id,addr,svc,hbeatby);
 	
 	zlist_append( svc->avail_workers,n_wrk);
 	svc->avail_count=svc->avail_count++;
@@ -241,17 +290,29 @@ void titanic_dispatcher::send_work(worker_t* worker,char *command,char *option, 
 			TMSG_TYPES [(int) *command]);
 		zmsg_dump (msg);
 	}
+	zmsg_send (&msg, this->socket);
+}
 
-	//********************************************************************************
-	//This right now is a compile hack and will have to pass the broker endpoint socket
-	//into the constructor so that we can hack it for a single endpoint solution.
-	zmsg_send (&msg, this->Pipe);
+void titanic_dispatcher::work_status_set(string workerid,string uuid){
+	Hash_wkrid_vuuid::iterator it =  this->working_workers.find(workerid);
+	if(it == this->working_workers.end()){
+		zlist_t* uids = zlist_new();
+		zlist_push(uids,&uuid);
+		this->working_workers[workerid]= uids;
+	}
+	else{
+		zlist_push(it->second,&uuid);
+	}
+}
+void titanic_dispatcher::work_status_clear(string svcname,string uuid){
+
 }
 
 void titanic_dispatcher::Test(void){
 	char* addy = "tcp:://test:100";
+	char* addy2 = "tcp:://test:101";
 	char* svcname = "Test.Service";
-	zframe_t* add_frame = zframe_new(addy,strlen(addy));
+	//zframe_t* add_frame = zframe_new(addy,strlen(addy));
 	string addy_str = string(addy);
 	string svcname_str = string(svcname);
 
@@ -262,35 +323,61 @@ void titanic_dispatcher::Test(void){
 
 
 	//Service Tests.
+
+	//Test Service Add, one for each overload.
 	this->service_add(addy_str);
-	if(!this->Service_Avail(addy_str)){
-		assert("failed");
-	}
-	this->service_del(addy_str);
-	if(this->Service_Avail(addy_str)){
-		assert("failed");
-	}
-
-	service_t* svc =new  service_t(addy_str);
+	service_t* svc =new  service_t(svcname);
 	this->service_add(svc);
-	if(!this->Service_Avail(addy_str)){
+
+	if(!this->Service_Avail(addy_str)||!this->Service_Avail(svcname)){
 		assert("failed");
 	}
+	//Test Service Del
 	this->service_del(addy_str);
-	if(this->Service_Avail(addy_str)){
+	this->service_del(svcname_str);
+	
+	if(this->Service_Avail(addy_str)||this->Service_Avail(svcname_str)){
 		assert("failed");
 	}
-
+	
 	//Worker Tests
-	worker_t wrk =  worker_t(addy_str,add_frame,svc,100);
-	this->worker_add(svcname_str,add_frame,100);
+	//This worker add creates a new service to go with it.
+	this->worker_add(svcname_str,zframe_new(addy,strlen(addy)),100);
 	if(!this->Service_Avail(svcname_str))
 		assert("fails");
 
-	zlist_append(testlist,&wrk);
-	zlist_remove(testlist,&wrk);
+	worker_t* wrk_svc = (worker_t*)	zlist_first(this->Svcs.begin()->second ->avail_workers);
 
-	this->worker_del(&wrk);
+	//This one should delete the worker. but leave the service.
+	this->worker_del(wrk_svc);
+
 	if(!this->Service_Avail(svcname_str))
 		assert("fails");
+
+	//This service delete call should clean up the workers as well.
+	this->worker_add(svcname_str,zframe_new(addy,strlen(addy)),10000);
+	this->worker_add(svcname_str,zframe_new(addy,strlen(addy)),100);
+	this->service_del(svcname_str);
+	//We have now validated both the worker add and delete functionality.
+
+	//Test the purge functionality. this should only affect those that have 
+	//expired based on heartbeating issues.
+	this->worker_add(svcname_str,zframe_new(addy,strlen(addy)+1),20*1000);
+	this->worker_add(svcname_str,zframe_new(addy2,strlen(addy2)),0);
+	zclock_sleep(100);
+	service_t* svc_ = this->Svcs.begin()->second;
+	this->workers_purge(svc_ ->avail_workers);
+	if(svc_->avail_count !=1)
+		assert("fails");
+	worker_t* wrk_ =(worker_t*) zlist_pop(svc_->avail_workers);
+		//since we are manually popping better clean up the service
+	svc_->avail_count--;
+	const char * w_id = wrk_->identity.c_str();
+	const char * a_id = addy_str.c_str();
+	int scp = strcmp(addy_str.c_str(),w_id);
+	if(scp==0)
+		assert("fails");
+
+
+
 }

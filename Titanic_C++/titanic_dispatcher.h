@@ -41,38 +41,24 @@ public:
 };
 class worker_t {
 public:
-	worker_t(string identity,zframe_t* addy,service_t* svc,int expiry);
+	worker_t(string identity,zframe_t* addy,service_t* svc,int64_t heartbeat_ivl);
 	worker_t(void);
 	~worker_t();
 	string identity;             //  Identity of worker
     zframe_t *address;          //  Address frame to route to
     service_t *service;         //  Owning service, if known
     int64_t expiry;             //  Expires at unless heartbeat
+	int64_t heartbeat_ivl;			// Like it says
 };
 
-////  This defines a single service
-//typedef struct {
-//    string *name;                 //  Service name
-//    zlist_t *requests;          //  List of client requests
-//    zlist_t *waiting;           //  List of waiting workers
-//    size_t workers;             //  How many workers we have
-//} service_t;
-//
-//// Defines a single worker
-//typedef struct {
-//    string *identity;             //  Identity of worker
-//    zframe_t *address;          //  Address frame to route to
-//    service_t *service;         //  Owning service, if known
-//    int64_t expiry;             //  Expires at unless heartbeat
-//} worker_t;
 
 typedef hash_map<string,service_t*,string_hash> Hash_str_svc;
 typedef hash_map<string,worker_t*,string_hash> Hash_str_wrkr;
-typedef hash_map<string,vector<UUID>*,string_hash> Hash_zframe_vuuid;
+typedef hash_map<string,zlist_t*,string_hash> Hash_wkrid_vuuid;
 
 typedef pair<string,service_t*> Pair_str_svc;
 typedef pair<string,worker_t*> Pair_str_wkr;
-typedef pair<string,vector<UUID>*> Pair_str_vuuid;
+typedef pair<string,zlist_t*> Pair_str_vuuid;
 
 class titanic_dispatcher :
 	public titanic_component
@@ -86,30 +72,30 @@ public:
 	//Method
 	
 	void Handle_Ready(zframe_t* address,string svcname);
-	void Handle_HeartBeat(zframe_t* address,zmsg_t* msg);
+	void Handle_HeartBeat(zframe_t* address,string svcname);
 	
 	void Dispatch(void);
 	
-	void Enqueue(string uuid);
+	//void Enqueue(string uuid,string svc);
 	void Enqueue(string uuid,string svc,zmsg_t* opaque_frames);
-	void Dequeue(string uuid);
+	void Dequeue(string uuid,string svc);
 	
 	bool Service_Avail(string name);
 
 	//Worker / Service Ms
-	void RecieveWork(zmsg_t* msg);
 	void Test(void);
 private:
 	//Properties
 	Hash_str_svc Svcs;
 	Hash_str_wrkr Wrkrs;
-	Hash_zframe_vuuid working_workers;
+	Hash_wkrid_vuuid working_workers;
 	void* socket;
 
 	//Methods
 	void workers_purge(zlist_t* workers);
 	void worker_add(string svcname,zframe_t* address,int hbeatby);
 	void worker_del(worker_t* worker);
+	worker_t* worker_get(service_t* svcname);
 
 	void services_purge(void);
 	void service_add(service_t* sv);
@@ -117,6 +103,8 @@ private:
 	void service_del(string name);
 
 	void send_work(worker_t* worker,char *command,char *option, zmsg_t *msg);
+	void work_status_set(string workerid,string uuid);
+	void work_status_clear(string svcname,string uuid);
 };
 
 
