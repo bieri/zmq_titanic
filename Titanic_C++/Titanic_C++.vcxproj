@@ -68,9 +68,9 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>E:\Projects\3rd Party Repos\0mq\Titanic_C++\Titanic_C++\include;E:\Projects\3rd Party Repos\0mq\zeromq-2.1.7\include;E:\Projects\3rd Party Repos\0mq\czmq\include;$(IncludePath)</IncludePath>
-    <LibraryPath>E:\Projects\3rd Party Repos\0mq\zeromq-2.1.7\lib;E:\Projects\3rd Party Repos\0mq\czmq\lib;$(LibraryPath)</LibraryPath>
-    <ReferencePath>E:\Projects\3rd Party Repos\0mq\zeromq-2.1.7\lib;E:\Projects\3rd Party Repos\0mq\czmq\lib;$(ReferencePath)</ReferencePath>
+    <IncludePath>$(SolutionDir)include\;$(SolutionDir)dependencies\zmq_x64\include\;$(SolutionDir)dependencies\czmq\include\;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)dependencies\zmq_x64\lib;$(SolutionDir)dependencies\czmq\lib;$(LibraryPath)</LibraryPath>
+    <ReferencePath>$(SolutionDir)dependencies\zmq_x64\lib;$(SolutionDir)dependencies\czmq\lib;$(ReferencePath)</ReferencePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -100,7 +100,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>E:\Projects\3rd Party Repos\0mq\czmq\lib;E:\Projects\3rd Party Repos\0mq\zeromq-2.1.7\lib;E:\Projects\3rd Party Repos\0mq\zeromq-2.1.7\builds\msvc\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)dependencies\czmq\lib;$(SolutionDir)dependencies\zmq_x64\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>Rpcrt4.lib;libzmq.lib;czmq.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/FORCE:MULTIPLE %(AdditionalOptions)</AdditionalOptions>
     </Link>
