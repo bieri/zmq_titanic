@@ -11,21 +11,22 @@ using namespace stdext;
 //Helper types.
 service_t::service_t(string name){
 	this->name.assign(name);
-	this->avail_workers = zlist_new();
-	this->requests = zlist_new();
+	this->avail_workers;
+	this->requests;
 	this->avail_count = 0;
 }
-service_t::service_t(string name,zlist_t* wrkrs){
-	this->name=name;
+service_t::service_t(string name,list<worker_t> wrkrs){
+	this->name.assign(name);
+	this->avail_workers.assign(wrkrs.begin(),wrkrs.end());
 	this->avail_workers=wrkrs;
-	this->requests = zlist_new();
+	this->requests;
 	this->avail_count = 0;
 }
 
 service_t::~service_t(){
 	this->name.erase();
-	zlist_destroy(&this->avail_workers);
-	zlist_destroy(&this->requests);
+	delete &(this->avail_workers);
+	delete &(this->requests);
 }
 
 worker_t::worker_t(string identity,zframe_t* addy,service_t* svc,int expiry){
@@ -185,10 +186,12 @@ void titanic_dispatcher::worker_del(worker_t* worker){
 	
 	//Send a disconnect so this thing fails gracefully. 
 	//And the worker doesnt just sit there forever.
-	send_work(worker,TMSG_TYPE_DISCONNECT,NULL,NULL);
+	if(!this->socket)
+		send_work(worker,TMSG_TYPE_DISCONNECT,NULL,NULL);
 
 	if (worker->service) {
-        zlist_remove (worker->service->avail_workers, worker);
+		service_t* svc = worker->service;
+        zlist_remove (svc->avail_workers, worker);
         worker->service->avail_count--;
 	}
 	{
@@ -211,6 +214,7 @@ void titanic_dispatcher::worker_add(string svcname,zframe_t* addr,int hbeatby){
 	worker_t* n_wrk = new worker_t(wrk_id,addr,svc,100);
 	
 	zlist_append( svc->avail_workers,n_wrk);
+	svc->avail_count=svc->avail_count++;
 
 
 }
@@ -270,7 +274,9 @@ void titanic_dispatcher::Test(void){
 	worker_t* wrk =  new worker_t(addy_str,add_frame,svc,100);
 	this->worker_add(svcname_str,add_frame,100);
 	if(!this->Service_Avail(svcname_str))
-		assert("failes");
-	
+		assert("fails");
 
+	this->worker_del(wrk);
+	if(!this->Service_Avail(svcname_str))
+		assert("fails");
 }

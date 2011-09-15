@@ -4,6 +4,7 @@
 #include <hash_map>
 #include <string.h>
 #include <uuids.h>
+#include <list>
 
 using namespace std;
 
@@ -24,15 +25,15 @@ public:
 	}
 };
 
-
+class worker_t;
 class service_t {
 public:
 	service_t(string name);
-	service_t(string name,zlist_t* wrkrs);
+	service_t(string name,vector<worker_t> wrkrs);
 	~service_t(void);
 	string name;                 //  Service name
-    zlist_t* requests;          //  List of client requests
-    zlist_t* avail_workers;           //  List of waiting workers
+    list<UUID> requests;          //  List of client requests
+    list<worker_t> avail_workers;           //  List of waiting workers
     size_t avail_count;             //  How many workers we have
 };
 class worker_t {
