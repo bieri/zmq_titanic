@@ -9,26 +9,37 @@ using namespace stdext;
 
 
 //Helper types.
+service_t::service_t(void){
+	this->name="";
+	this->avail_workers = zlist_new();
+	this->requests = zlist_new();
+	this->avail_count =0;
+}
 service_t::service_t(string name){
 	this->name.assign(name);
-	this->avail_workers;
-	this->requests;
+	this->avail_workers=zlist_new();
+	this->requests=zlist_new();
 	this->avail_count = 0;
 }
-service_t::service_t(string name,list<worker_t> wrkrs){
+service_t::service_t(string name,zlist_t* wrkrs){
 	this->name.assign(name);
-	this->avail_workers.assign(wrkrs.begin(),wrkrs.end());
 	this->avail_workers=wrkrs;
-	this->requests;
+	this->requests=zlist_new();
 	this->avail_count = 0;
 }
 
 service_t::~service_t(){
 	this->name.erase();
-	delete &(this->avail_workers);
-	delete &(this->requests);
+	zlist_destroy(&(this->avail_workers));
+	zlist_destroy(&(this->requests));
 }
 
+worker_t::worker_t(){
+	this->identity="";
+	this->address=zframe_new(&"error",5);
+	this->service=NULL;
+	this->expiry=0;
+}
 worker_t::worker_t(string identity,zframe_t* addy,service_t* svc,int expiry){
 	this->identity.assign(identity);
 	this->address = addy;
@@ -119,20 +130,15 @@ void titanic_dispatcher::Handle_Ready(zframe_t* address,string svcname){
 	worker_add(svcname,address,100);
 }
 bool titanic_dispatcher::Service_Avail(string name){
-//	string key = name->substr(0,name->length());
 	return (this->Svcs.find(name)!=Svcs.end());
 }
 
 void titanic_dispatcher::service_add(service_t* sv){
-	//this->Svcs.insert(Pair_str_svc(sv->name->substr(0,sv->name->length()),sv));
-	string key;
-	key.assign(sv->name);
-	this->Svcs[key] = sv;
+	this->Svcs[sv->name] = sv;
 }
 void titanic_dispatcher::service_add(string name){
-	//string key =name->substr(0,name->length());
 	service_t* sv = new service_t(name);
-	this->Svcs[name] = sv;
+	service_add(sv);
 }
 
 
@@ -201,14 +207,13 @@ void titanic_dispatcher::worker_del(worker_t* worker){
 	}
 }
 void titanic_dispatcher::worker_add(string svcname,zframe_t* addr,int hbeatby){
-	service_t* svc;
 	
 	if(!this->Service_Avail(svcname)){
 		this->service_add(svcname);
 	}
 	string key;
 	key.assign(svcname);
-	svc = (this->Svcs.find(key) ->second);
+	service_t* svc = (this->Svcs.find(key) ->second);
 	char* w_name =zframe_strdup(addr);
 	string wrk_id = string(w_name);
 	worker_t* n_wrk = new worker_t(wrk_id,addr,svc,100);
@@ -250,6 +255,12 @@ void titanic_dispatcher::Test(void){
 	string addy_str = string(addy);
 	string svcname_str = string(svcname);
 
+
+
+	zlist_t* testlist = zlist_new();
+	
+
+
 	//Service Tests.
 	this->service_add(addy_str);
 	if(!this->Service_Avail(addy_str)){
@@ -260,7 +271,7 @@ void titanic_dispatcher::Test(void){
 		assert("failed");
 	}
 
-	service_t* svc = new service_t(addy_str);
+	service_t* svc =new  service_t(addy_str);
 	this->service_add(svc);
 	if(!this->Service_Avail(addy_str)){
 		assert("failed");
@@ -271,12 +282,15 @@ void titanic_dispatcher::Test(void){
 	}
 
 	//Worker Tests
-	worker_t* wrk =  new worker_t(addy_str,add_frame,svc,100);
+	worker_t wrk =  worker_t(addy_str,add_frame,svc,100);
 	this->worker_add(svcname_str,add_frame,100);
 	if(!this->Service_Avail(svcname_str))
 		assert("fails");
 
-	this->worker_del(wrk);
+	zlist_append(testlist,&wrk);
+	zlist_remove(testlist,&wrk);
+
+	this->worker_del(&wrk);
 	if(!this->Service_Avail(svcname_str))
 		assert("fails");
 }

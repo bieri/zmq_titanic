@@ -29,16 +29,20 @@ class worker_t;
 class service_t {
 public:
 	service_t(string name);
-	service_t(string name,vector<worker_t> wrkrs);
+	service_t(string name,zlist_t* wrkrs);
+	service_t(void);
 	~service_t(void);
 	string name;                 //  Service name
-    list<UUID> requests;          //  List of client requests
-    list<worker_t> avail_workers;           //  List of waiting workers
+    //list<UUID> requests;          //  List of client requests
+    //list<worker_t> avail_workers;           //  List of waiting workers
+	zlist_t* requests;
+	zlist_t* avail_workers;
     size_t avail_count;             //  How many workers we have
 };
 class worker_t {
 public:
 	worker_t(string identity,zframe_t* addy,service_t* svc,int expiry);
+	worker_t(void);
 	~worker_t();
 	string identity;             //  Identity of worker
     zframe_t *address;          //  Address frame to route to
@@ -93,7 +97,7 @@ public:
 	bool Service_Avail(string name);
 
 	//Worker / Service Ms
-	void RecieveWork(zmsg_t msg);
+	void RecieveWork(zmsg_t* msg);
 	void Test(void);
 private:
 	//Properties
