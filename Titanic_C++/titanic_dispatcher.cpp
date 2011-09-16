@@ -4,6 +4,8 @@
 #include "titanic_persistence.h"
 #include <czmq.h>
 #include <hash_map>
+#include <hash_set>
+
 using namespace std;
 using namespace stdext;
 
@@ -27,7 +29,6 @@ service_t::service_t(string name,zlist_t* wrkrs){
 	this->requests=zlist_new();
 	this->avail_count = 0;
 }
-
 service_t::~service_t(){
 	this->name.erase();
 	zlist_destroy(&(this->avail_workers));
@@ -44,8 +45,8 @@ worker_t::worker_t(string identity,zframe_t* addy,service_t* svc,int64_t heartbe
 	this->identity.assign(identity);
 	this->address = addy;
 	this->service = svc;
-	this->expiry = zclock_time() + expiry;
-	this->heartbeat_ivl = expiry;
+	this->expiry = zclock_time() + heartbeat_ivl;
+	this->heartbeat_ivl = heartbeat_ivl;
 }
 worker_t::~worker_t(){
 	this->identity.erase();
@@ -60,8 +61,6 @@ titanic_dispatcher::titanic_dispatcher(string brokername,int hbeat,int reconn,vo
 	//broker that is calling it. Eventually i will fix this.
 	this->socket=socket;
 }
-
-
 titanic_dispatcher::~titanic_dispatcher(void)
 {
 
@@ -268,7 +267,7 @@ void titanic_dispatcher::worker_add(string svcname,zframe_t* addr,int hbeatby){
 	worker_t* n_wrk = new worker_t(wrk_id,addr,svc,hbeatby);
 	
 	zlist_append( svc->avail_workers,n_wrk);
-	svc->avail_count=svc->avail_count++;
+	svc->avail_count++;
 
 
 }
@@ -296,16 +295,47 @@ void titanic_dispatcher::send_work(worker_t* worker,char *command,char *option, 
 void titanic_dispatcher::work_status_set(string workerid,string uuid){
 	Hash_wkrid_vuuid::iterator it =  this->working_workers.find(workerid);
 	if(it == this->working_workers.end()){
-		zlist_t* uids = zlist_new();
-		zlist_push(uids,&uuid);
+		Hash_str* uids = new Hash_str();
+		uids->insert(uuid);
 		this->working_workers[workerid]= uids;
 	}
 	else{
-		zlist_push(it->second,&uuid);
+		it->second->insert(uuid);
 	}
 }
-void titanic_dispatcher::work_status_clear(string svcname,string uuid){
-
+//This is used if a worker is killed for a heartbeating issue to reapportion the work. 
+//The work should definitely go back on the front of the queue.
+void titanic_dispatcher::work_status_clear(string workerid){
+	
+	Hash_wkrid_vuuid::iterator l_it = this->working_workers.find(workerid);
+	if(l_it!=this->working_workers.end()){
+		this->working_workers.erase(l_it);
+	}			
+}
+//This is used to clean up the state that is being maintained, since we are passing 
+//the particular request we have to assume that we are only going to be expiring one
+//atomic request that has either been completed or expired by the requester.
+void titanic_dispatcher::work_status_clear(string svcname,string workerid,string uuid){
+	//we are always hoping for a worker id. cheapest way to expire this thing in
+	//the current set up as well as the most frequently received way because  we normally are 
+	//going to recieve an expiration of a uuid when work has been completed.
+	if(!workerid.empty()){
+		Hash_wkrid_vuuid::iterator l_it = this->working_workers.find(workerid);
+		Hash_str* h_s = l_it->second;
+		if(h_s->count(uuid)==1){
+			l_it->second->erase(uuid);
+		}
+	}
+	else{
+		//This is only hit when a client is expiring a bit of work.
+		Hash_wkrid_vuuid::iterator it =  this->working_workers.begin();
+		for (; it != this->working_workers.end(); ++it){
+			if(it->second->count(uuid)==1){
+				it->second->erase(uuid);
+				break;
+			}
+		}
+	}
 }
 
 void titanic_dispatcher::Test(void){
@@ -375,8 +405,23 @@ void titanic_dispatcher::Test(void){
 	const char * w_id = wrk_->identity.c_str();
 	const char * a_id = addy_str.c_str();
 	int scp = strcmp(addy_str.c_str(),w_id);
-	if(scp==0)
+	if(scp!=0)
 		assert("fails");
+	this->worker_del(wrk_);
+
+	//time to test all the worker status manipulators:
+	//	--work_status_set
+	//	--work_status_clear
+
+	this->worker_add(svcname_str,zframe_new(addy,strlen(addy)+1),20*1000);
+	worker_t* wrk__ = this->worker_get(this->Svcs.begin()->second);
+	string uuid = titanic_persistence::gen_uuid();
+	this->work_status_set(wrk__->identity,uuid);
+	this->work_status_clear(wrk__->identity);
+	this->work_status_set(wrk__->identity,uuid);
+	this->work_status_clear(string(""),wrk__->identity,uuid);
+	this->work_status_set(wrk__->identity,uuid);
+	this->work_status_clear(wrk__->service->name,string(""),uuid);
 
 
 

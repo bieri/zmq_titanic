@@ -2,6 +2,7 @@
 #include <czmq.h>
 #include "titanic_component.h"
 #include <hash_map>
+#include <hash_set>
 #include <string.h>
 #include <uuids.h>
 #include <list>
@@ -51,10 +52,10 @@ public:
 	int64_t heartbeat_ivl;			// Like it says
 };
 
-
+typedef hash_set<string,string_hash> Hash_str;
 typedef hash_map<string,service_t*,string_hash> Hash_str_svc;
 typedef hash_map<string,worker_t*,string_hash> Hash_str_wrkr;
-typedef hash_map<string,zlist_t*,string_hash> Hash_wkrid_vuuid;
+typedef hash_map<string,Hash_str*,string_hash> Hash_wkrid_vuuid;
 
 typedef pair<string,service_t*> Pair_str_svc;
 typedef pair<string,worker_t*> Pair_str_wkr;
@@ -104,7 +105,8 @@ private:
 
 	void send_work(worker_t* worker,char *command,char *option, zmsg_t *msg);
 	void work_status_set(string workerid,string uuid);
-	void work_status_clear(string svcname,string uuid);
+	void work_status_clear(string workerid);
+	void work_status_clear(string svcname,string workerid,string uuid);
 };
 
 
