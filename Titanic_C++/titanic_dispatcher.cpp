@@ -9,13 +9,13 @@
 using namespace std;
 using namespace stdext;
 
-
+#pragma region Helper Types
 //Helper types.
 service_t::service_t(void){
 	this->name="";
 	this->avail_workers = zlist_new();
 	this->requests = zlist_new();
-	this->avail_count =0;
+	this->avail_count = 0;
 }
 service_t::service_t(string name){
 	this->name.assign(name);
@@ -27,7 +27,7 @@ service_t::service_t(string name,zlist_t* wrkrs){
 	this->name.assign(name);
 	this->avail_workers=wrkrs;
 	this->requests=zlist_new();
-	this->avail_count = 0;
+	this->avail_count =0;
 }
 service_t::~service_t(){
 	this->name.erase();
@@ -52,6 +52,7 @@ worker_t::~worker_t(){
 	this->identity.erase();
 	zframe_destroy(&this->address);
 }
+#pragma endregion Includes service_t, worker_t and various typedefs
 
 titanic_dispatcher::titanic_dispatcher(string brokername,int hbeat,int reconn,void* skt)
 	:titanic_component("titanic.discovery",brokername,ZMQ_ROUTER,hbeat,reconn)
@@ -151,7 +152,7 @@ void titanic_dispatcher::Enqueue(string uuid,string svc,zmsg_t* opaque_frms){
 	service_t* serv = this->Svcs.find(svc)->second;
 	if(serv->avail_count==0){
 		//We queue it and expect someone to pick it up later from the msg directory.
-		zlist_append(serv->requests, (void*)uuid.c_str());
+		zlist_append(serv->requests, &uuid);
 		zmsg_destroy(&opaque_frms);
 	}
 	else{
@@ -160,11 +161,24 @@ void titanic_dispatcher::Enqueue(string uuid,string svc,zmsg_t* opaque_frms){
 		this->send_work(wrk,TMSG_TYPE_REQUEST,NULL,opaque_frms);
 	}
 }
+void titanic_dispatcher::Dequeue(string uuid,string svc){
+	//if there is no service available for the dequeue something bizzare has happened.
+	//should prolly do something about that.
+	if(this->Service_Avail(svc)){
+		service_t* s = this->Svcs.find(svc)->second;
+		//I am pretty sure that this is going to have to be changed to a hash_set
+		//I think that this is more than likely going to be slow. ugh.
+		zlist_remove(s->requests,&svc);
+	}
+}
+
 
 bool titanic_dispatcher::Service_Avail(string name){
 	return (this->Svcs.find(name)!=Svcs.end());
 }
 
+
+//PRIVATE Methods::
 void titanic_dispatcher::service_add(service_t* sv){
 	this->Svcs[sv->name] = sv;
 }
@@ -245,12 +259,6 @@ void titanic_dispatcher::worker_del(worker_t* worker){
         zlist_remove (svc->avail_workers, worker);
         worker->service->avail_count--;
 	}
-	{
-	string key;
-	key.assign(worker->identity);
-	this->Wrkrs.erase(key);
-	}
-	
 	//Do some memory management.
 	delete worker;
 }
@@ -292,6 +300,7 @@ void titanic_dispatcher::send_work(worker_t* worker,char *command,char *option, 
 	zmsg_send (&msg, this->socket);
 }
 
+//We are setting the status to maintain state so we know if a worker dies what we need to do.
 void titanic_dispatcher::work_status_set(string workerid,string uuid){
 	Hash_wkrid_vuuid::iterator it =  this->working_workers.find(workerid);
 	if(it == this->working_workers.end()){
@@ -303,15 +312,23 @@ void titanic_dispatcher::work_status_set(string workerid,string uuid){
 		it->second->insert(uuid);
 	}
 }
+
 //This is used if a worker is killed for a heartbeating issue to reapportion the work. 
 //The work should definitely go back on the front of the queue.
 void titanic_dispatcher::work_status_clear(string workerid){
 	
 	Hash_wkrid_vuuid::iterator l_it = this->working_workers.find(workerid);
 	if(l_it!=this->working_workers.end()){
+		Hash_str* h_s = l_it->second;
+
+		//I definitely do not like this section of code. Listed at issue#2 at Git.
+		for (Hash_str::const_iterator it=h_s->begin(); it != h_s->end(); ++it){
+			this->work_requeue(string(it->c_str()));
+		}
 		this->working_workers.erase(l_it);
 	}			
 }
+
 //This is used to clean up the state that is being maintained, since we are passing 
 //the particular request we have to assume that we are only going to be expiring one
 //atomic request that has either been completed or expired by the requester.
@@ -328,7 +345,7 @@ void titanic_dispatcher::work_status_clear(string svcname,string workerid,string
 	}
 	else{
 		//This is only hit when a client is expiring a bit of work.
-		Hash_wkrid_vuuid::iterator it =  this->working_workers.begin();
+		Hash_wkrid_vuuid::const_iterator it =  this->working_workers.begin();
 		for (; it != this->working_workers.end(); ++it){
 			if(it->second->count(uuid)==1){
 				it->second->erase(uuid);
@@ -337,6 +354,32 @@ void titanic_dispatcher::work_status_clear(string svcname,string workerid,string
 		}
 	}
 }
+void titanic_dispatcher::work_requeue(string uuid){
+	//Since we will never have a service when this is called. We will go and fetch the message from the 
+	//persistence layer and then pop off the Service Frame. Once we have that we can call the Enqueue bit.
+	//just for some reason i really didnt want to encapsulate this functionality in the work_status_clear()
+	//I suppose its just for separation of concerns more than anything.
+	zmsg_t* msg = titanic_persistence::get(TMSG_TYPE_REQUEST,(char*)uuid.c_str());
+	//lets pop off the service frame which should be frame one.
+	string svc = string(zmsg_popstr(msg));
+	//according to the api this is an empty frame.
+	zframe_t* e_fr = zmsg_pop(msg);
+	zframe_destroy(&e_fr);
+	//wish i could just calll Enqueue here, but i need them at the frotn of the queue, after all
+	//they were already being processed so we should at least put them at the front of the line.
+	service_t* serv = this->Svcs.find(svc)->second;
+	if(serv->avail_count==0){
+		//We queue it and expect someone to pick it up later from the msg directory.
+		zlist_push(serv->requests, &uuid);
+		zmsg_destroy(&msg);
+	}
+	else{
+		worker_t* wrk = this->worker_get(serv);
+		this->work_status_set(wrk->identity,uuid);
+		this->send_work(wrk,TMSG_TYPE_REQUEST,NULL,msg);
+	}
+}
+
 
 void titanic_dispatcher::Test(void){
 	char* addy = "tcp:://test:100";
@@ -397,11 +440,10 @@ void titanic_dispatcher::Test(void){
 	zclock_sleep(100);
 	service_t* svc_ = this->Svcs.begin()->second;
 	this->workers_purge(svc_ ->avail_workers);
-	if(svc_->avail_count !=1)
+	if(svc_->avail_count>0)
 		assert("fails");
 	worker_t* wrk_ =(worker_t*) zlist_pop(svc_->avail_workers);
 		//since we are manually popping better clean up the service
-	svc_->avail_count--;
 	const char * w_id = wrk_->identity.c_str();
 	const char * a_id = addy_str.c_str();
 	int scp = strcmp(addy_str.c_str(),w_id);
@@ -416,13 +458,19 @@ void titanic_dispatcher::Test(void){
 	this->worker_add(svcname_str,zframe_new(addy,strlen(addy)+1),20*1000);
 	worker_t* wrk__ = this->worker_get(this->Svcs.begin()->second);
 	string uuid = titanic_persistence::gen_uuid();
+	
+	/* These tests require a message to be persisted to disk in order to get teh thing going
 	this->work_status_set(wrk__->identity,uuid);
-	this->work_status_clear(wrk__->identity);
+	this->work_status_clear(wrk__->identity);*/
+
 	this->work_status_set(wrk__->identity,uuid);
 	this->work_status_clear(string(""),wrk__->identity,uuid);
 	this->work_status_set(wrk__->identity,uuid);
 	this->work_status_clear(wrk__->service->name,string(""),uuid);
 
+
+	this->Enqueue(uuid,wrk__->service->name,zmsg_new());
+	this->Dequeue(uuid,wrk__->service->name);
 
 
 }

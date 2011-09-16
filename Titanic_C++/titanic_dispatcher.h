@@ -10,6 +10,7 @@
 using namespace std;
 
 //Lets stick this here as its the only place I really want this to be used. No sense in leaking it all over the codebase;
+#pragma region Helper Types
 class string_hash : public hash_compare<string>{
 public:
 	size_t operator() (const string& s) const{
@@ -57,9 +58,7 @@ typedef hash_map<string,service_t*,string_hash> Hash_str_svc;
 typedef hash_map<string,worker_t*,string_hash> Hash_str_wrkr;
 typedef hash_map<string,Hash_str*,string_hash> Hash_wkrid_vuuid;
 
-typedef pair<string,service_t*> Pair_str_svc;
-typedef pair<string,worker_t*> Pair_str_wkr;
-typedef pair<string,zlist_t*> Pair_str_vuuid;
+#pragma endregion Includes service_t, worker_t and various typedefs
 
 class titanic_dispatcher :
 	public titanic_component
@@ -80,6 +79,7 @@ public:
 	//void Enqueue(string uuid,string svc);
 	void Enqueue(string uuid,string svc,zmsg_t* opaque_frames);
 	void Dequeue(string uuid,string svc);
+
 	
 	bool Service_Avail(string name);
 
@@ -88,7 +88,6 @@ public:
 private:
 	//Properties
 	Hash_str_svc Svcs;
-	Hash_str_wrkr Wrkrs;
 	Hash_wkrid_vuuid working_workers;
 	void* socket;
 
@@ -104,9 +103,11 @@ private:
 	void service_del(string name);
 
 	void send_work(worker_t* worker,char *command,char *option, zmsg_t *msg);
+	
 	void work_status_set(string workerid,string uuid);
 	void work_status_clear(string workerid);
 	void work_status_clear(string svcname,string workerid,string uuid);
+	void work_requeue(string uuid);
 };
 
 

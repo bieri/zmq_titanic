@@ -10,9 +10,10 @@ namespace titanic_persistence
 {
 	string gen_uuid();
 	//returns 1 for successful persistence.
-	int store(char* msgtype,char* uuid,zmsg_t* msg);
-	int exists(char* msgtype,char* uuid);
-	int remove(char* uuid);
+	bool store(char* msgtype,char* uuid,zmsg_t* msg);
+	bool exists(char* msgtype,char* uuid);
+	bool finalize(char* uuid);
+	char* get_filename(char* msgtype,char* uuid);
 	zmsg_t* get(char* msgtype,char* uuid);
 };
 

@@ -20,6 +20,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	
 	titanic_dispatcher* d = new titanic_dispatcher("MYBk",100,100,NULL);
 	d->Test();
+	d->set_Reconnect_Ivl(1100);
 	//d->service_add(&string("MySvc"));
 
 

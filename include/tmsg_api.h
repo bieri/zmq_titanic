@@ -27,9 +27,10 @@ static char* TMSG_TYPES [] = {
 /*
 ALL FRAMES ARE PREPENDED WITH THE REQUIRED ZMQ MSG ENVELOPE.
 DEFAULT FRAMING:
+Frame 0: Message Envelope (Address + Empty Frame comes as part of DEALER Socket)
 Frame 1: TITANIC VERSION (TWRK_SVC_VER,TWRK_CLI_VER)
 Frame 2: 0x01 (one byte, representing the desired COMMAND)
-
+Frame 3: Service name (printable string)
 **************************************************************************************************
 --------------------------------------------------------------------------------------------------
 COMMAND:	READY / HEARTBEAT  
@@ -37,11 +38,11 @@ SUMMARY:	Consists of a multipart message of 4 frames, formatted on the wire as f
 
 --------------------------------------------------------------------------------------------------
 ORIGIN:		WORKER
+Only default framing.
 
-Frame 3: Service name (printable string)
 
 ORIGIN:		SERVER
-Frame 3: Service name (printable string)
+Only default framing.
 
 **************************************************************************************************
 --------------------------------------------------------------------------------------------------
@@ -49,12 +50,10 @@ COMMAND:	REQUEST
 SUMMARY:	Consists of a multipart message of 6 or more frames, formatted on the wire as follows:
 --------------------------------------------------------------------------------------------------
 ORIGIN:		WORKER
-Frame 3:	Client address (envelope stack)
 Frame 4:	Empty (zero bytes, envelope delimiter)
 Frames 5+:	Request body (opaque binary)
 
 ORIGIN:		SERVER
-Frame 3:	Client address (envelope stack)
 Frame 4:	Empty (zero bytes, envelope delimiter)
 Frames 5:	UUID
 
