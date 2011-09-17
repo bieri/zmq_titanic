@@ -9,19 +9,25 @@ using namespace std;
 class titanic_broker
 {
 public:
-	titanic_broker(string address,string backside);
-	titanic_broker(string frontside,string backside,int verbose);
+	titanic_broker(string address);
+	titanic_broker(string frontside,int verbose);
 	~titanic_broker(void);
 
-	string Sckt_Address;
+	char* Sckt_Address;
 	zctx_t* Context;				//ZMQ context used to spin up the service.
-	void* Z_Sckt;					//INPROC Pipe for Broker to service communciations
+	void* Z_Sckt;					//Public socket for everyone else to talk to.
+	void* Inproc_Sckt;				//INPROC Pipe for Broker to service communciations
 	int Verbose;					//Settable log level
 
 	void Start(void);
+
 	titanic_dispatcher* Dispatcher;
 private:
+	void heartbeat(void);
 	void process_msg(zmsg_t* msg);
+
+	void send_to_component(zmsg_t* msg,char* command,char* service,char* origin,zframe_t* envelope,char* scktid);
+
 	void message_from_client(zmsg_t* msg);
 	void message_from_worker(zmsg_t* msg);
 

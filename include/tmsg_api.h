@@ -1,4 +1,5 @@
-
+#define TADD_PUB "tcp://*:5555"
+#define TADD_INPROC "inproc://titanic_broker"
 
 #define TWRK_SVC_VER "TITS01"
 #define TWRK_CLI_VER "TITC01"
@@ -18,7 +19,6 @@
 #define TMSG_TYPE_HEARTBEAT  "5"
 #define TMSG_TYPE_DISCONNECT  "6"
 #define TMSG_TYPE_FINALIZE "7"
-#define TMSG_TYPE_AVAILABLE "8"
 
 static char* TMSG_TYPES [] = {
     NULL, "READY", "REQUEST", "REPLY","PUBLISH", "HEARTBEAT", "DISCONNECT","FINALIZE","AVAILABLE"

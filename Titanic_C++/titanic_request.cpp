@@ -4,7 +4,7 @@
 #include "titanic_persistence.h"
 
 using namespace std;
-titanic_request::titanic_request(string brokername,int hbeat,int reconn):titanic_component("titanic.request",brokername,ZMQ_ROUTER,hbeat,reconn)
+titanic_request::titanic_request(string brokername,int hbeat,int reconn):titanic_component("titanic.request",brokername,ZMQ_REP,hbeat,reconn)
 {
 }
 
