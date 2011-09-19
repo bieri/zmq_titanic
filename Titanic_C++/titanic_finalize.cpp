@@ -17,10 +17,8 @@ titanic_finalize::~titanic_finalize(void){
 
 void titanic_finalize::Start(){
 	this->connect_to_broker();
-    zmsg_t *reply = NULL;
-
     while (TRUE) {
-        zmsg_t *incoming = this->get_work(TMSG_TYPE_FINALIZE);
+        zmsg_t *incoming = this->get_work();
         if (!incoming)
             break;      //  Interrupted, exit
         
@@ -28,32 +26,29 @@ void titanic_finalize::Start(){
 		zframe_t* envelope = zmsg_unwrap(incoming);
 
 		//lets get the frame we want. the last one.
-		char* uuid;
-		reply = zmsg_new ();
-		zmsg_add(reply,zmsg_pop(incoming)); //empty frame
-		zmsg_add(reply,zmsg_pop(incoming)); //version of the titanic service
-		zmsg_add(reply,zmsg_pop(incoming)); //TMSG_TYPE
-		
-		uuid = zmsg_popstr(incoming);
+		zframe_t* origin = zmsg_pop(incoming); //version of the titanic service
+		zframe_t* service = zmsg_pop(incoming);//TMSG_TYPE
+		zframe_t* command = zmsg_pop(incoming);
+		char* uuid= zmsg_popstr(incoming);
 
-		if(titanic_persistence::remove(uuid)){
+		if(titanic_persistence::finalize(uuid)){
 			//return a 200 back to the client
-			zmsg_addstr(reply,TMSG_STATUS_OK);
-			zmsg_addstr(reply,uuid);
-			
+			zmsg_pushstr(incoming,TMSG_STATUS_OK);
 		}
 		else{
 			//return a 500 to the client.
-			zmsg_addstr(reply,TMSG_STATUS_ERROR);
-			zmsg_addstr(reply,uuid);
+			zmsg_addstr(incoming,TMSG_STATUS_ERROR);
 		}
 		//Since we are replying direcly to the client lets put the message back in the envelope.
-		zmsg_wrap(reply,envelope);
-		zmsg_send(&reply,this->Context);
+		zmsg_pushstr(incoming,uuid);
+		zmsg_push(incoming,command);
+		zmsg_push(incoming,service);
+		zmsg_pushstr(incoming,TWRK_SVC_VER);
+		zmsg_wrap(incoming,envelope);
+		zmsg_send(&incoming ,this->Context);
 
 		//Clean up after ourselves.
         zmsg_destroy (&incoming);
-		zmsg_destroy (&reply);
         free (&uuid);
 	}
 }

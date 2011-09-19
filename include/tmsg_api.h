@@ -1,5 +1,6 @@
 #define TADD_PUB "tcp://*:5555"
 #define TADD_INPROC "inproc://titanic_broker"
+#define TMSG_DIR "C:\\titanic.messages"
 
 #define TWRK_SVC_VER "TITS01"
 #define TWRK_CLI_VER "TITC01"

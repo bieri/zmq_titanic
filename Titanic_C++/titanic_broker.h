@@ -28,13 +28,9 @@ private:
 
 	void send_to_component(zmsg_t* msg,char* command,char* service,char* origin,zframe_t* envelope,char* scktid);
 
-	void message_from_client(zmsg_t* msg);
-	void message_from_worker(zmsg_t* msg);
-
-	void message_to_worker(zmsg_t* msg);
-	void message_to_client(zmsg_t* msg);
-
-	bool service_available(string svc_name);
+	void message_from_client(zmsg_t* body,zframe_t* envelope,char* origin,char* service,char* command,char*uuid);
+	void message_from_component(zmsg_t* body,zframe_t* envelope,char* origin,char* service,char* command,char*uuid);
+	void message_from_worker(zmsg_t* body,zframe_t* envelope,char* origin,char* service,char* command,char*uuid);
 
 };
 

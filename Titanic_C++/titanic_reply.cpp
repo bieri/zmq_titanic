@@ -5,23 +5,7 @@
 #include <czmq.h>
 #include <list>
 #include <iostream>
-/*
-The titanic.reply service accepts a UUID and if a reply exists for that UUID, returns the reply message. It accepts a request message with 1 frame, as follows:
-	Frame 0: UUID (as returned by titanic.request)
-	
-	The titanic.reply service MUST reply with 1 or more frames, as follows:
-		Frame 0: Status code (explained below)
-		Frames 1+: Request body (opaque binary), if OK
 
-	The status code MUST be one of the codes listed below in the section "Status Frames". The UUID MUST be formatted as 32 printable 
-	hexadecimal characters ('0' to '9' and 'A' to 'Z' or 'a' to 'z').
-
-The titanic.reply service is idempotent and MUST NOT delete a reply when successfully delivered to the client. Multiple requests to titanic.reply with 
-the same UUID should result in the same response back to the client, until and unless the request is executed. See "Request Execution" below.
-*/
-
-//Sole Constructor:
-//Implement the constructor and the base class layer, this will add some default settings.
 titanic_reply::titanic_reply(string brokername,int hbeat,int reconn):
 	titanic_component("titanic.reply",brokername,ZMQ_ROUTER,hbeat,reconn){
 }
@@ -36,44 +20,61 @@ void titanic_reply::Start(){
     zmsg_t *reply = NULL;
 
     while (TRUE) {
-        zmsg_t *incoming = this->get_work(TMSG_TYPE_REPLY);
+        zmsg_t *incoming = this->get_work();
         if (!incoming)
             break;      //  Interrupted, exit
-        
-		zframe_t* empty2 = zmsg_pop(incoming);
-		
-		//disassemble our incoming and assemble the reply, all in one operation.
-        reply = zmsg_new ();
-		zmsg_add(reply,zmsg_pop(incoming));
-		zmsg_add(reply,zmsg_pop(incoming));
-		zmsg_add(reply,zmsg_pop(incoming));
-		zmsg_add(reply,zmsg_pop(incoming));
-		zmsg_add(reply,zmsg_pop(incoming));
-		
-		//last incoming frame will be our UUID.
-		char *uuid = zmsg_popstr (incoming);
 
-		if(titanic_persistence::exists(TMSG_TYPE_REPLY,uuid)){
-			zmsg_t* frames;
-			frames = titanic_persistence::get(TMSG_TYPE_REPLY,uuid);
-			zmsg_addstr(reply, TMSG_STATUS_OK);
-			zframe_t* f = NULL;
-			f=zmsg_pop(frames);
-			while(f != NULL){
-				zmsg_add(reply,f);
-				f = zmsg_pop(frames);
-			}
+		zframe_t* envelope = zmsg_unwrap(incoming);
+		char* origin = zmsg_popstr(incoming);
+		zframe_t* service = zmsg_pop(incoming);
+		char* command = zmsg_popstr(incoming);
+		char* uuid = zmsg_popstr(incoming);
+
+				
+		//disassemble our incoming and assemble the reply, all in one operation.
+		if(strcmp(origin,TWRK_WRK_VER)==0){
+			this->message_from_worker(incoming,envelope,origin,service,command,uuid);
 		}
-        else {
-			if (titanic_persistence::exists(TMSG_TYPE_REQUEST,uuid))
-                zmsg_pushstr (reply, TMSG_STATUS_PENDING); //Pending
-            else
-                zmsg_pushstr (reply, TMSG_STATUS_UKNOWN); //Unknown
-        }
+		if(strcmp(origin,TWRK_CLI_VER)==0){
+			zmsg_destroy(&incoming);
+			incoming = this->message_from_client(envelope,origin,service,command,uuid);
+			zmsg_send(&incoming,this->Pipe);
+		}
+		
         zmsg_destroy (&incoming);
 		zmsg_destroy (&reply);
         free (uuid);
-        /*free (req_filename);
-        free (rep_filename);*/
     }
+
+}
+zmsg_t* titanic_reply::message_from_client(zframe_t* envelope,char* origin,zframe_t* service,char* command,char* uuid){
+	zmsg_t* reply;
+	if(titanic_persistence::exists(TMSG_TYPE_REPLY,uuid)){
+		reply = titanic_persistence::get(TMSG_TYPE_REPLY,uuid);
+	}
+    else {
+		reply = zmsg_new();
+		if (titanic_persistence::exists(TMSG_TYPE_REQUEST,uuid))
+            zmsg_pushstr (reply, TMSG_STATUS_PENDING); //Pending
+        else
+            zmsg_pushstr (reply, TMSG_STATUS_UKNOWN); //Unknown
+		
+		zmsg_pushstr(reply,uuid);
+		zmsg_pushstr(reply,command);
+		zmsg_push(reply,service);
+    }
+	
+	zmsg_pushstr(reply,origin);
+	zmsg_wrap(reply,envelope);
+	return reply;
+}
+void titanic_reply::message_from_worker(zmsg_t* reply,zframe_t* envelope,char* origin,zframe_t* service,char* command,char* uuid){
+	zmsg_pushstr(reply,TMSG_STATUS_OK);
+	zmsg_pushstr(reply,uuid);
+	zmsg_pushstr(reply,command);
+	zmsg_push(reply,service);
+
+	if(titanic_persistence::store(TMSG_TYPE_REPLY,uuid,reply)){
+		assert("failed to save");
+	}
 }

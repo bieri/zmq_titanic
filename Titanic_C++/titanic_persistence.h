@@ -13,7 +13,8 @@ namespace titanic_persistence
 	bool store(char* msgtype,char* uuid,zmsg_t* msg);
 	bool exists(char* msgtype,char* uuid);
 	bool finalize(char* uuid);
-	char* get_filename(char* msgtype,char* uuid);
+	string get_filename(char* msgtype,char* uuid);
 	zmsg_t* get(char* msgtype,char* uuid);
+	void Test(void);
 };
 

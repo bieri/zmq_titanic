@@ -173,7 +173,7 @@
     <ClCompile Include="titanic_persistence.cpp" />
     <ClCompile Include="titanic_reply.cpp" />
     <ClCompile Include="titanic_request.cpp" />
-    <ClCompile Include="titanic_service.cpp" />
+    <ClCompile Include="titanic_component.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

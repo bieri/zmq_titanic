@@ -62,9 +62,6 @@
     <ClCompile Include="titanic_reply.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="titanic_service.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="titanic_persistence.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -78,6 +75,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="titanic_dispatcher.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="titanic_component.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

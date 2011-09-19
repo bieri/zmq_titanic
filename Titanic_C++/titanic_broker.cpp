@@ -30,6 +30,7 @@ titanic_broker::~titanic_broker(void)
 
     free (this);
 }
+
 void titanic_broker::send_to_component(zmsg_t* msg,char* command,char* service,char* origin,zframe_t* envelope,char* scktid){
 	zmsg_pushstr(msg,command);
 	zmsg_pushstr(msg,service);
@@ -37,6 +38,7 @@ void titanic_broker::send_to_component(zmsg_t* msg,char* command,char* service,c
 	zmsg_wrap(msg,envelope);
 	zmsg_pushstr(msg,scktid);
 	zmsg_send(&msg,this->Inproc_Sckt);
+	
 }
 
 void titanic_broker::Start(void){
@@ -72,131 +74,95 @@ void titanic_broker::Start(void){
 
 			if(strcmp(origin,TWRK_CLI_VER)==0){
 				//Client
-				if(strcmp(command,TMSG_TYPE_REQUEST)){
-					//send it to the request handler
-					this->send_to_component(msg,command,service,origin,envelope,"titanic.request");
-				}
-				else if(strcmp(command,TMSG_TYPE_REPLY)){
-					this->send_to_component(msg,command,service,origin,envelope,"titanic.reply");
-				}
-				else if(strcmp(command,TMSG_TYPE_FINALIZE)){
-					//send it to the reply handler on a different thread.
-					uuid = zmsg_popstr(msg);
-					if(!titanic_persistence::exists(TMSG_TYPE_REPLY,uuid)){
-						this->Dispatcher->Dequeue(string(uuid),string(""));
-					}
-					else{
-						//send to finalizer.
-						zmsg_pushstr(msg,uuid);
-						this->send_to_component(msg,command,service,origin,envelope,"titanic.finalize");
-					}
-				}
+				this->message_from_client(msg,envelope,origin,service,command,uuid);
 			}
 			else if(strcmp(origin,TWRK_SVC_VER)==0){
 				//Internal Titanic Component
-				//We are assuming that they will be ready and alive by the time that we get to here.
-				//this is prolly a bad assumption but its one i am willing to make for right now.
-				if(strcmp(command,TMSG_TYPE_REQUEST)==0){
-					//this is going to be coming back from the request service.
-					uuid = zmsg_popstr(msg);
-					//send the value back to the 
-					zmsg_t* clientmsg = zmsg_new();
-					zmsg_add(clientmsg,zframe_dup(envelope));
-					char* i1;
-					zmsg_addstr(clientmsg,strcpy(i1,origin));
-					char* i2;
-					zmsg_addstr(clientmsg,strcpy(i2,service));
-					char* i3;
-					zmsg_addstr(clientmsg,strcpy(i3,command));
-					char* i4;
-					zmsg_addstr(clientmsg,strcpy(i4,uuid));
-					
-					zmsg_send(&clientmsg,this->Z_Sckt);
-					zmsg_destroy(&clientmsg);
-
-					//lets queue up the work now.
-					this->Dispatcher->Enqueue(string(uuid),string(service),msg);
-				}
-				else if(strcmp(command,TMSG_TYPE_REPLY)){
-					this->send_to_component(msg,command,service,origin,envelope,"titanic.reply");
-				}
+				this->message_from_component(msg,envelope,origin,service,command,uuid);
 			}
 			else if(strcmp(origin,TWRK_WRK_VER)==0){
 				//Worker
-				if(strcmp(command,TMSG_TYPE_READY)){
-					this->Dispatcher->Handle_Ready(envelope,string(service));
-				}
-				else if(strcmp(command,TMSG_TYPE_HEARTBEAT)){
-					this->Dispatcher->Handle_HeartBeat(envelope,string(service));
-				}
-				else if(strcmp(command,TMSG_TYPE_REPLY)){
-					//Need to mark this as completed.
-					char* uuid = zmsg_popstr(msg);
-					this->Dispatcher->Dequeue(string(uuid),string(service));
-					zmsg_pushstr(msg,uuid);
-					//send it to the reply handler on a different thread to save to the file system.
-					this->send_to_component(msg,command,service,origin,envelope,"titanic.request");
-					//send it to the publisher so that we can notify those clients that dont want to ping.
-					this->send_to_component(msg,command,service,origin,envelope,"titanic.publish");
-					
-					
-				}
+				this->message_from_worker(msg,envelope,origin,service,command,uuid);
 			}
+			zmsg_destroy(&msg);
+			delete origin;
+			delete service;
+			delete command;
+			delete uuid;
         }
         
     }
     if (zctx_interrupted)
         printf ("W: interrupt received, shutting down…\n");
 }
-void titanic_broker::heartbeat(void){
-	//  Disconnect and delete any expired workers
-        //  Send heartbeats to idle workers if needed
-        if (zclock_time () > this->heartbeat_at) {
-            s_broker_purge_workers (self);
-            worker_t *worker = (worker_t *) zlist_first (self->waiting);
-            while (worker) {
-                s_worker_send (self, worker, MDPW_HEARTBEAT, NULL, NULL);
-                worker = (worker_t *) zlist_next (self->waiting);
-            }
-            self->heartbeat_at = zclock_time () + HEARTBEAT_INTERVAL;
-        }
+
+void titanic_broker::message_from_client(zmsg_t* msg,zframe_t* envelope,char* origin,char* service,char* command,char*uuid){
+	if(strcmp(command,TMSG_TYPE_REQUEST)){
+		//send it to the request handler
+		this->send_to_component(msg,command,service,origin,envelope,"titanic.request");
+	}
+	else if(strcmp(command,TMSG_TYPE_REPLY)){
+		this->send_to_component(msg,command,service,origin,envelope,"titanic.reply");
+	}
+	else if(strcmp(command,TMSG_TYPE_FINALIZE)){
+		//send it to the reply handler on a different thread.
+		uuid = zmsg_popstr(msg);
+		if(!titanic_persistence::exists(TMSG_TYPE_REPLY,uuid)){
+			this->Dispatcher->Dequeue(string(uuid),string(""));
+		}
+		else{
+			//send to finalizer.
+			zmsg_pushstr(msg,uuid);
+			this->send_to_component(msg,command,service,origin,envelope,"titanic.finalize");
+		}
+	}
 }
+void titanic_broker::message_from_component(zmsg_t* msg,zframe_t* envelope,char* origin,char* service,char* command,char*uuid){
+	//We are assuming that they will be ready and alive by the time that we get to here.
+				//this is prolly a bad assumption but its one i am willing to make for right now.
+	if(strcmp(command,TMSG_TYPE_REQUEST)==0){
+		//this is going to be coming back from the request service.
+		uuid = zmsg_popstr(msg);
+		//send the value back to the 
+		zmsg_t* clientmsg = zmsg_new();
+		zmsg_add(clientmsg,zframe_dup(envelope));
+		char* i1;
+		zmsg_addstr(clientmsg,strcpy(i1,origin));
+		char* i2;
+		zmsg_addstr(clientmsg,strcpy(i2,service));
+		char* i3;
+		zmsg_addstr(clientmsg,strcpy(i3,command));
+		char* i4;
+		zmsg_addstr(clientmsg,strcpy(i4,uuid));
+					
+		zmsg_send(&clientmsg,this->Z_Sckt);
+		zmsg_destroy(&clientmsg);
 
-void titanic_broker::process_msg(zmsg_t* msg){
-	 assert (zmsg_size (msg) >= 1);     //  At least, command
-
-	  if (zframe_streq (header, TWRK_CLI_VER)){
-		        s_client_process (self, sender, msg);
-				this->message_from_client(msg);
-	  }
-      else{
-		  this->message_from_worker(msg);
-            if (zframe_streq (header, TWRK_WRK_VER))
-                s_worker_process (self, sender, msg);
-            else {
-                zclock_log ("E: invalid message:");
-                zmsg_dump (msg);
-                zmsg_destroy (&msg);
-            }
-	  }
-	 //for client
-	 
-
-	 //for services.
-	 
-
+		//lets queue up the work now.
+		this->Dispatcher->Enqueue(string(uuid),string(service),msg);
+	}
+	else if(strcmp(command,TMSG_TYPE_REPLY)){
+		this->send_to_component(msg,command,service,origin,envelope,"titanic.reply");
+	}
 }
-
-//Process an incoming message from a client.
-void titanic_broker::message_from_client(zmsg_t* msg){
-
-}
-//Process an incoming message from a worker. This is where we store the result for the UUID.
-void titanic_broker::message_from_worker(zmsg_t* msg){
+void titanic_broker::message_from_worker(zmsg_t* msg,zframe_t* envelope,char* origin,char* service,char* command,char*uuid){
 	
+	if(strcmp(command,TMSG_TYPE_READY)){
+		this->Dispatcher->Handle_Ready(envelope,string(service));
+	}
+	else if(strcmp(command,TMSG_TYPE_HEARTBEAT)){
+		this->Dispatcher->Handle_HeartBeat(envelope,string(service));
+	}
+	else if(strcmp(command,TMSG_TYPE_REPLY)){
+		//Need to mark this as completed.
+		char* uuid = zmsg_popstr(msg);
+		this->Dispatcher->Dequeue(string(uuid),string(service));
+		zmsg_pushstr(msg,uuid);
+		//send it to the reply handler on a different thread to save to the file system.
+		this->send_to_component(msg,command,service,origin,envelope,"titanic.request");
+		//send it to the publisher so that we can notify those clients that dont want to ping.
+		this->send_to_component(msg,command,service,origin,envelope,"titanic.publish");
+					
+					
+	}
 }
-
-void titanic_broker::message_to_client(zmsg_t* msg){
-
-}
-

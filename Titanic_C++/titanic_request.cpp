@@ -18,43 +18,35 @@ void titanic_request::Start(){
     zmsg_t *reply = NULL;
 
     while (TRUE) {
-        zmsg_t *incoming = this->get_work(TMSG_TYPE_REQUEST);
+        zmsg_t *incoming = this->get_work();
         if (!incoming)
             break;      //  Interrupted, exit
         
+		zframe_t* envelope = zmsg_unwrap(incoming);
+		zframe_t* origin_fr = zmsg_pop(incoming);
+		zframe_t* service = zmsg_pop(incoming);
+		zframe_t* command = zmsg_pop(incoming);
+
 		//We know that its of the correct type. So lets go ahead and stash it.
 		string uid = titanic_persistence::gen_uuid();
-		if(titanic_persistence::store(TMSG_TYPE_REQUEST,(char*) &uid,incoming)){
+		
+		//push the id onto the body
+		zmsg_pushstr(incoming,uid.c_str());
+		zmsg_push(incoming,command);
+		zmsg_push(incoming,service);
+		zmsg_pushstr(incoming,TWRK_SVC_VER);
+		zmsg_wrap(incoming,envelope);
+		//Send the uuid back to the server before we store the message as there is some magic in the broker 
+		//to shuffle this work over to the dispatcher.
+		zmsg_send(&incoming,this->Pipe);
+
+		if(titanic_persistence::store(TMSG_TYPE_REQUEST,(char*)uid.c_str(),incoming)){
 			throw runtime_error(strcat( "Unable to store request with id of " ,(char*) &uid));
 		}
 
-		zframe_t* empty2 = zmsg_pop(incoming);
-		
-		//disassemble our incoming and assemble the reply, all in one operation.
-        reply = zmsg_new ();
-		zmsg_add(reply,zmsg_pop(incoming)); //empty frame
-		zmsg_add(reply,zmsg_pop(incoming)); //version of the titanic service
-		zmsg_add(reply,zmsg_pop(incoming)); //TMSG_TYPE
-		zmsg_add(reply,zmsg_pop(incoming)); //client address
-		zmsg_add(reply,zmsg_pop(incoming)); //empty frame
-
-		//lets go ahead and send the work over to the queue. 
-		//We should make sure we can shuffle it before we reply to the client.
-		//all we are going to do is send over the UUID. it can use the persistence layer
-		//to pick up the message and send it down.
-		zmsg_t* internalmsg = zmsg_new();
-		zmsg_addstr(internalmsg,uid.c_str());
-		zmsg_send(&internalmsg,this->Pipe);
-
-		//lets send the uuid back to the client. We are after all a proxy.
-		zmsg_addstr(reply,TMSG_STATUS_OK);
-		zmsg_addstr(reply,uid.c_str());
-		zmsg_send(&reply,this->Context);
-
 		//Clean up after ourselves.
+		zframe_destroy(&origin_fr);
         zmsg_destroy (&incoming);
-		zmsg_destroy (&internalmsg);
-		zmsg_destroy (&reply);
         free (&uid);
 	}
 }

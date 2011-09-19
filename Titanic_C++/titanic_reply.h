@@ -10,5 +10,8 @@ public:
 	titanic_reply(string brokername,int hbeat,int reconn);
 	~titanic_reply(void);
 	void Start();
+private:
+	void message_from_worker(zmsg_t* reply,zframe_t* envelope,char* origin,zframe_t* service,char* command,char* uuid);
+	zmsg_t* message_from_client(zframe_t* envelope,char* origin,zframe_t* service,char* command,char* uuid);
 };
 
