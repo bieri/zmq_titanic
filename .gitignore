@@ -6,3 +6,9 @@
 *.sdf
 /_ReSharper.Titanic_C++
 *.user
+/titanic.common/x64
+/titanic.common/Debug
+/titanic.finalize/x64
+/titanic.finalize/Debug
+/titanic_echo_client/Debug
+/titanic_echo_client/x64
