@@ -6,8 +6,8 @@
 #include <list>
 #include <iostream>
 
-titanic_reply::titanic_reply(string brokername,int hbeat,int reconn):
-	titanic_component("titanic.reply",brokername,ZMQ_ROUTER,hbeat,reconn){
+titanic_reply::titanic_reply(zctx_t* ctx,string brokername,int hbeat,int reconn):
+	titanic_component(ctx,"titanic.reply",brokername,ZMQ_XREP,hbeat,reconn){
 }
 
 titanic_reply::~titanic_reply(void){
@@ -18,7 +18,7 @@ void titanic_reply::Start(){
 	
 	this->connect_to_broker();
     zmsg_t *reply = NULL;
-
+	cout<<"Starting Reply \n\r";
     while (TRUE) {
         zmsg_t *incoming = this->get_work();
         if (!incoming)

@@ -24,28 +24,7 @@
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="titanic_reply.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="titanic_finalize.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="titanic_request.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="titanic_broker.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="titanic_dispatcher.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="titanic_component.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="titanic_persistence.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\tmsg_api.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -53,28 +32,10 @@
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="titanic.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="titanic_reply.cpp">
+    <ClCompile Include="titanic.finalize.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="titanic_finalize.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="titanic_request.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="titanic_broker.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="titanic_dispatcher.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="titanic_component.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="titanic_persistence.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

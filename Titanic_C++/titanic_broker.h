@@ -9,16 +9,18 @@ using namespace std;
 class titanic_broker
 {
 public:
-	titanic_broker(string address);
-	titanic_broker(string frontside,int verbose);
+	titanic_broker(string address,string compaddress);
+	titanic_broker(string frontside,string compaddress,int verbose);
 	~titanic_broker(void);
 
 	char* Sckt_Address;
+	char* Comp_Address;
 	zctx_t* Context;				//ZMQ context used to spin up the service.
 	void* Z_Sckt;					//Public socket for everyone else to talk to.
 	void* Inproc_Sckt;				//INPROC Pipe for Broker to service communciations
 	int Verbose;					//Settable log level
 
+	void init(void);
 	void Start(void);
 
 	titanic_dispatcher* Dispatcher;

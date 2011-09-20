@@ -1,7 +1,9 @@
-#include "StdAfx.h"
+#include "stdafx.h"
+#include <czmq.h>
 #include "titanic_finalize.h"
-#include "titanic_persistence.h"
-#include "tmsg_api.h"
+#include <titanic_component.h>
+#include <tmsg_api.h>
+#include <titanic_persistence.h>
 
 using namespace std;
 

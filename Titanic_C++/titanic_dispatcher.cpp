@@ -55,7 +55,7 @@ worker_t::~worker_t(){
 #pragma endregion Includes service_t, worker_t and various typedefs
 
 titanic_dispatcher::titanic_dispatcher(string brokername,int hbeat,int reconn,void* skt)
-	:titanic_component("titanic.discovery",brokername,ZMQ_ROUTER,hbeat,reconn)
+	:titanic_component(NULL,"titanic.discovery",brokername,ZMQ_ROUTER,hbeat,reconn)
 {
 	//This is only to be used in the dispatch method. remember that this is not in fact thread safe.
 	//so this entire class must be treated as non thread safe and must be on the same thread as the 

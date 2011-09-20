@@ -1,9 +1,12 @@
 #include <iostream>
+#include <string.h>
 #include <czmq.h>
-
 using namespace std;
+#pragma once
 
-class titanic_component{
+
+class __declspec(dllexport) titanic_component
+{
 protected:
 	//Constructor Properties
 	string Svc_Name;			//Name of this service for communication purposes.
@@ -24,11 +27,11 @@ protected:
 private:
 	//properties
 	int64_t heartbeat_at;			//Time in MS (ticks) when the heart beat needs to happen. Saves cycles.
-	
+	bool isConnected;
 public:
 	//Constructor
-	titanic_component(string svcname,string brokername,int zmqsckttype,int64_t hbeativl,int64_t reconivl);
-	titanic_component(string svcname,string brokername,int zmqsckttype,int64_t hbeativl,int64_t reconivl,int verbose);
+	titanic_component(zctx_t* ctx,string svcname,string brokername,int zmqsckttype,int64_t hbeativl,int64_t reconivl);
+	titanic_component(zctx_t* ctx,string svcname,string brokername,int zmqsckttype,int64_t hbeativl,int64_t reconivl,int verbose);
 	
 	void set_Heartbeat_Ivl(int64_t newval);
 	void set_Reconnect_Ivl(int64_t newval);
@@ -36,3 +39,4 @@ public:
 	~titanic_component();
 	virtual void Start(){};
 };
+

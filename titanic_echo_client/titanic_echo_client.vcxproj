@@ -19,9 +19,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{C933702B-8F96-4230-ADB7-775001BAE22A}</ProjectGuid>
+    <ProjectGuid>{DDF29EDA-D228-4940-AEBD-89558BA8ED95}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>Titanic_C</RootNamespace>
+    <RootNamespace>titanic_echo_client</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -33,7 +33,6 @@
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>Unicode</CharacterSet>
-    <UseOfAtl>Static</UseOfAtl>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -65,12 +64,15 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(SolutionDir)include\;$(SolutionDir)dependencies\zmq_x64\include\;$(SolutionDir)dependencies\czmq\include\;$(IncludePath)</IncludePath>
+    <ReferencePath>$(SolutionDir)dependencies\zmq_x64\lib;$(SolutionDir)dependencies\czmq\lib;$(ReferencePath)</ReferencePath>
+    <LibraryPath>$(SolutionDir)dependencies\zmq_x64\lib;$(SolutionDir)dependencies\czmq\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(SolutionDir)include\;$(SolutionDir)dependencies\zmq_x64\include\;$(SolutionDir)dependencies\czmq\include\;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)dependencies\zmq_x64\lib;$(SolutionDir)dependencies\czmq\lib;$(LibraryPath)</LibraryPath>
     <ReferencePath>$(SolutionDir)dependencies\zmq_x64\lib;$(SolutionDir)dependencies\czmq\lib;$(ReferencePath)</ReferencePath>
+    <LibraryPath>$(SolutionDir)dependencies\zmq_x64\lib;$(SolutionDir)dependencies\czmq\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -88,11 +90,13 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(SolutionDir)dependencies\czmq\lib;$(SolutionDir)dependencies\zmq_x64\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>Rpcrt4.lib;libzmq.lib;czmq.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -102,14 +106,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)dependencies\czmq\lib;$(SolutionDir)dependencies\zmq_x64\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>Rpcrt4.lib;libzmq.lib;czmq.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalOptions>/FORCE:MULTIPLE %(AdditionalOptions)</AdditionalOptions>
     </Link>
-    <ProjectReference>
-      <LinkLibraryDependencies>true</LinkLibraryDependencies>
-    </ProjectReference>
-    <PostBuildEvent>
-      <Command>xcopy "$(SolutionDir)dependencies\zmq_x64\lib\libzmq.dll" "$(TargetDir)" /Y</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -147,16 +144,8 @@
     <None Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\include\tmsg_api.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
-    <ClInclude Include="titanic_broker.h" />
-    <ClInclude Include="titanic_component.h" />
-    <ClInclude Include="titanic_dispatcher.h" />
-    <ClInclude Include="titanic_finalize.h" />
-    <ClInclude Include="titanic_persistence.h" />
-    <ClInclude Include="titanic_reply.h" />
-    <ClInclude Include="titanic_request.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -165,14 +154,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="titanic.cpp" />
-    <ClCompile Include="titanic_broker.cpp" />
-    <ClCompile Include="titanic_component.cpp" />
-    <ClCompile Include="titanic_dispatcher.cpp" />
-    <ClCompile Include="titanic_finalize.cpp" />
-    <ClCompile Include="titanic_persistence.cpp" />
-    <ClCompile Include="titanic_reply.cpp" />
-    <ClCompile Include="titanic_request.cpp" />
+    <ClCompile Include="titanic_echo_client.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

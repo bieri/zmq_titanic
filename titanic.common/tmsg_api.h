@@ -1,3 +1,4 @@
+#include <czmq.h>
 #define TADD_PUB "tcp://*:5555"
 #define TADD_INPROC "inproc://titanic_broker"
 //#define TADD_INPROC "tcp://127.0.0.1:5556"
