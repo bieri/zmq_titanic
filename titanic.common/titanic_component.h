@@ -1,7 +1,4 @@
-#include <iostream>
-#include <string.h>
-#include <czmq.h>
-using namespace std;
+#include "stdafx.h"
 #pragma once
 
 

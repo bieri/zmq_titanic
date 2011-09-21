@@ -78,7 +78,7 @@ int titanic_component::send_to_broker(char* messagetype,zmsg_t* msg){
 	zmsg_pushstr(msg,"");
 	zmsg_pushstr(msg,"titanic.broker");
     if (this->Verbose) {
-        zclock_log ("I: sending %s to broker",TMSG_TYPES [(int) *messagetype]);
+        zclock_log ("I: sending %s to broker",messagetype);
         zmsg_dump (msg);
     }
 

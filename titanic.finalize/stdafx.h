@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <tchar.h>
 #include <czmq.h>
+#include <tmsg_api.h>
 
 
 

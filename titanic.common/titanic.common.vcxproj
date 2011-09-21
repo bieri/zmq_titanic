@@ -64,10 +64,13 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(SolutionDir)include\;$(SolutionDir)dependencies\zmq_x64\include\;$(SolutionDir)dependencies\czmq\include\;$(IncludePath)</IncludePath>
+    <ReferencePath>$(SolutionDir)dependencies\zmq_x64\lib;$(SolutionDir)dependencies\czmq\lib;$(ReferencePath)</ReferencePath>
+    <LibraryPath>$(SolutionDir)dependencies\zmq_x64\lib;$(SolutionDir)dependencies\czmq\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)include\;$(SolutionDir)dependencies\zmq_x64\include\;$(SolutionDir)dependencies\czmq\include\;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)include\;$(SolutionDir)titanic.common;$(SolutionDir)dependencies\zmq_x64\include\;$(SolutionDir)dependencies\czmq\include\;$(IncludePath)</IncludePath>
     <ReferencePath>$(SolutionDir)dependencies\zmq_x64\lib;$(SolutionDir)dependencies\czmq\lib;$(ReferencePath)</ReferencePath>
     <LibraryPath>$(SolutionDir)dependencies\zmq_x64\lib;$(SolutionDir)dependencies\czmq\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
@@ -87,6 +90,8 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>Rpcrt4.lib;libzmq.lib;czmq.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)dependencies\czmq\lib;$(SolutionDir)dependencies\zmq_x64\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

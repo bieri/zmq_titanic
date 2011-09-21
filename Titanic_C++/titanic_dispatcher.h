@@ -1,6 +1,5 @@
 #pragma once
-#include <czmq.h>
-#include <titanic_component.h>
+#include "stdafx.h"
 #include <hash_map>
 #include <hash_set>
 #include <string.h>

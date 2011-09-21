@@ -1,11 +1,8 @@
 #include "StdAfx.h"
 #include "titanic_dispatcher.h"
-#include "tmsg_api.h"
-#include <titanic_persistence.h>
-#include <czmq.h>
 #include <hash_map>
 #include <hash_set>
-
+#include <tmsg_api.h>
 using namespace std;
 using namespace stdext;
 
@@ -293,8 +290,7 @@ void titanic_dispatcher::send_work(worker_t* worker,char *command,char *option, 
 	zmsg_wrap (msg, zframe_dup (worker->address));
 
 	if (this->Verbose) {
-		zclock_log ("I: sending %s to worker",
-			TMSG_TYPES [(int) *command]);
+		zclock_log ("I: sending %s to worker",command);
 		zmsg_dump (msg);
 	}
 	zmsg_send (&msg, this->socket);

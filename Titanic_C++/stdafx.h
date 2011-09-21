@@ -10,6 +10,9 @@
 #include <stdio.h>
 #include <tchar.h>
 #include <czmq.h>
+#include <titanic_component.h>
+#include <tmsg_api.h>
+#include <titanic_persistence.h>
 
-
+using namespace std;
 // TODO: reference additional headers your program requires here

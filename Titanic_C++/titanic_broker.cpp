@@ -1,8 +1,6 @@
 #include "StdAfx.h"
 #include <czmq.h>
 #include "titanic_broker.h"
-#include <tmsg_api.h>
-#include <titanic_persistence.h>
 
 
 titanic_broker::titanic_broker(string frontside,string componentside)
@@ -16,7 +14,7 @@ titanic_broker::titanic_broker(string frontside,string componentside)
 
 	//bind up our sockts
 	zsocket_bind(Z_Sckt,this->Sckt_Address);
-	zsocket_bind(this->Inproc_Sckt,TADD_INPROC);
+	zsocket_bind(this->Inproc_Sckt,this->Comp_Address);
 
 }
 titanic_broker::titanic_broker(string frontside,string componentside,int verbose)
