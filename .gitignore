@@ -1,15 +1,19 @@
 
 /x64
-/Titanic_C++/x64
 /ipch
 /Titanic_C++.opensdf
 *.sdf
 /_ReSharper.Titanic_C++
 *.user
+/Debug
 /titanic.common/x64
 /titanic.common/Debug
 /titanic.finalize/x64
 /titanic.finalize/Debug
+/titanic.reply/x64
+/titanic.request/x64
+/Titanic_C++/x64
 /titanic_echo_client/Debug
 /titanic_echo_client/x64
-/titanic.reply/x64
+/titanic_echo_worker/Debug
+/titanic_echo_worker/x64

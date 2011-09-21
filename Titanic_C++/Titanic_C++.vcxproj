@@ -150,12 +150,7 @@
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="titanic_broker.h" />
-    <ClInclude Include="titanic_component.h" />
     <ClInclude Include="titanic_dispatcher.h" />
-    <ClInclude Include="titanic_finalize.h" />
-    <ClInclude Include="titanic_persistence.h" />
-    <ClInclude Include="titanic_reply.h" />
-    <ClInclude Include="titanic_request.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -166,12 +161,7 @@
     </ClCompile>
     <ClCompile Include="titanic.cpp" />
     <ClCompile Include="titanic_broker.cpp" />
-    <ClCompile Include="titanic_component.cpp" />
     <ClCompile Include="titanic_dispatcher.cpp" />
-    <ClCompile Include="titanic_finalize.cpp" />
-    <ClCompile Include="titanic_persistence.cpp" />
-    <ClCompile Include="titanic_reply.cpp" />
-    <ClCompile Include="titanic_request.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
