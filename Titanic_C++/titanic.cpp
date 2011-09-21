@@ -49,7 +49,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	titanic_broker* broker = new titanic_broker("tcp://*:5555",TADD_INPROC,1);
 	
 	//zthread_new(start_request,broker->Context);
-	zthread_new(start_reply,broker->Context);
+	//zthread_new(start_reply,broker->Context);
 	//zthread_new(start_finalize,broker->Context);
 
 	broker->Start();

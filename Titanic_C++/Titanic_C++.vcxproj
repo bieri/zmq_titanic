@@ -101,7 +101,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)dependencies\czmq\lib;$(SolutionDir)dependencies\zmq_x64\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>Rpcrt4.lib;libzmq.lib;czmq.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Rpcrt4.lib;libzmq.lib;czmq.lib;titanic.common.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/FORCE:MULTIPLE %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <ProjectReference>

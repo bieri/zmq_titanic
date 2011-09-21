@@ -24,12 +24,18 @@
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="titanic_reply.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="titanic.reply.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="titanic_reply.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

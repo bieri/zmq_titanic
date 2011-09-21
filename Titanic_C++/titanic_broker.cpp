@@ -1,8 +1,8 @@
 #include "StdAfx.h"
 #include <czmq.h>
 #include "titanic_broker.h"
-#include "tmsg_api.h"
-#include "titanic_persistence.h"
+#include <tmsg_api.h>
+#include <titanic_persistence.h>
 
 
 titanic_broker::titanic_broker(string frontside,string componentside)
