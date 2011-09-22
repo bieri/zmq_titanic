@@ -1,7 +1,8 @@
 #include "stdafx.h"
 
 #define TADD_PUB "tcp://*:5555"
-#define TADD_PRIV "tcp://*:5555"
+#define TADD_PRIV "tcp://*:5556"
+#define TADD_COMP "tcp://127.0.0.1:5556" //This one is for the components to use.
 //#define TADD_INPROC "tcp://127.0.0.1:5556"
 #define TMSG_DIR "C:\\titanic.messages"
 

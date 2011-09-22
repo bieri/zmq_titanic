@@ -19,7 +19,14 @@ void titanic_reply::Start(){
         zmsg_t *incoming = this->get_work();
         if (!incoming)
             break;      //  Interrupted, exit
+		
+		zframe_t* f_1 = zmsg_first(incoming);
+		zframe_t* f_2 = zmsg_next(incoming);
 
+		if(!zframe_streq(f_2,"")){
+			zframe_t* f = zmsg_pop(incoming);
+			zframe_destroy(&f);
+		}
 		zframe_t* envelope = zmsg_unwrap(incoming);
 		char* origin = zmsg_popstr(incoming);
 		zframe_t* service = zmsg_pop(incoming);
@@ -60,8 +67,10 @@ zmsg_t* titanic_reply::message_from_client(zframe_t* envelope,char* origin,zfram
 		zmsg_push(reply,service);
     }
 	
-	zmsg_pushstr(reply,origin);
+	zmsg_pushstr(reply,TWRK_SVC_VER);
 	zmsg_wrap(reply,envelope);
+	zmsg_pushstr(reply,"titanic.broker");
+	zmsg_dump(reply);
 	return reply;
 }
 void titanic_reply::message_from_worker(zmsg_t* reply,zframe_t* envelope,char* origin,zframe_t* service,char* command,char* uuid){
@@ -69,8 +78,8 @@ void titanic_reply::message_from_worker(zmsg_t* reply,zframe_t* envelope,char* o
 	zmsg_pushstr(reply,uuid);
 	zmsg_pushstr(reply,command);
 	zmsg_push(reply,service);
-
-	if(titanic_persistence::store(TMSG_TYPE_REPLY,uuid,reply)){
+	zmsg_dump(reply);
+	if(!titanic_persistence::store(TMSG_TYPE_REPLY,uuid,reply)){
 		assert("failed to save");
 	}
 }

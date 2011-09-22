@@ -15,7 +15,8 @@ titanic_broker::titanic_broker(string frontside,string componentside)
 	//bind up our sockts
 	zsocket_bind(Z_Sckt,this->Sckt_Address);
 	zsocket_bind(this->Inproc_Sckt,this->Comp_Address);
-
+	//set up the dispatcher
+	this->Dispatcher = new titanic_dispatcher(this->Sckt_Address,10000,10000,this->Z_Sckt);
 }
 titanic_broker::titanic_broker(string frontside,string componentside,int verbose)
 {
@@ -23,7 +24,8 @@ titanic_broker::titanic_broker(string frontside,string componentside,int verbose
 	this->Comp_Address =(char*)  componentside.c_str();
 	this->Context = zctx_new();
 	this->Z_Sckt = zsocket_new(this->Context,ZMQ_ROUTER);
-	
+	zsockopt_set_identity(this->Z_Sckt,"titanic.frontend");
+
 	this->Inproc_Sckt = zsocket_new(this->Context,ZMQ_ROUTER); //Socket to connect our services to.
 	zsockopt_set_identity(this->Inproc_Sckt,"titanic.broker");
 
@@ -32,6 +34,9 @@ titanic_broker::titanic_broker(string frontside,string componentside,int verbose
 	//bind up our sockts
 	zsocket_bind(this->Z_Sckt,this->Sckt_Address);
 	zsocket_bind(this->Inproc_Sckt,this->Comp_Address);
+
+	//set up the dispatcher
+	this->Dispatcher = new titanic_dispatcher(this->Sckt_Address,10000,10000,this->Z_Sckt);
 }
 
 titanic_broker::~titanic_broker(void)
@@ -68,7 +73,7 @@ void titanic_broker::Start(void){
             { this->Z_Sckt,  0, ZMQ_POLLIN, 0 },
 			{ this->Inproc_Sckt,0,ZMQ_POLLIN,0}};
 
-        int rc = zmq_poll (items, 1,100  * ZMQ_POLL_MSEC);
+        int rc = zmq_poll (items, 2,1000  * ZMQ_POLL_MSEC);
         if (rc == -1)
             break;              //  Interrupted
 
@@ -89,8 +94,16 @@ void titanic_broker::Start(void){
                 break;          //  Interrupted
             if (this->Verbose) {
                 zclock_log ("I: received message:");
-                zmsg_dump (msg);
+                //zmsg_dump (msg);
             }
+			//Conditionally pop off the first frame. its a pain to use xrep.
+			zframe_t* f_1 = zmsg_first(msg);
+			zframe_t* f_2 = zmsg_next(msg);
+
+			if(!zframe_streq(f_2,"")){
+				zframe_t* f = zmsg_pop(msg);
+				zframe_destroy(&f);
+			}
 			this->process_msg(msg);
 		}
     }
@@ -122,7 +135,17 @@ void titanic_broker::process_msg(zmsg_t* msg){
 void titanic_broker::message_from_client(zmsg_t* msg,zframe_t* envelope,char* origin,char* service,char* command,char*uuid){
 	if(strcmp(command,TMSG_TYPE_REQUEST)==0){
 		//send it to the request handler
-		this->send_to_component(msg,command,service,origin,envelope,"titanic.request");
+		if(this->Dispatcher->Service_Avail(string(service))){
+			this->send_to_component(msg,command,service,origin,envelope,"titanic.request");
+		}else{
+			zmsg_pushstr(msg,TMSG_STATUS_UKNOWN);
+			zmsg_pushstr(msg,command);
+			zmsg_pushstr(msg,service);
+			zmsg_pushstr(msg,origin);
+			zmsg_wrap(msg,envelope);
+			zmsg_dump(msg);
+			zmsg_send(&msg,this->Z_Sckt);
+		}
 	}
 	else if(strcmp(command,TMSG_TYPE_REPLY)==0){
 		this->send_to_component(msg,command,service,origin,envelope,"titanic.reply");
@@ -148,16 +171,17 @@ void titanic_broker::message_from_component(zmsg_t* msg,zframe_t* envelope,char*
 		uuid = zmsg_popstr(msg);
 		//send the value back to the 
 		zmsg_t* clientmsg = zmsg_new();
-		zmsg_add(clientmsg,zframe_dup(envelope));
-		char* i1;
+		zmsg_wrap(clientmsg,zframe_dup(envelope));
+		char i1[200];
 		zmsg_addstr(clientmsg,strcpy(i1,origin));
-		char* i2;
+		char i2[200];
 		zmsg_addstr(clientmsg,strcpy(i2,service));
-		char* i3;
+		char i3[200];
 		zmsg_addstr(clientmsg,strcpy(i3,command));
-		char* i4;
+		zmsg_addstr(clientmsg,TMSG_STATUS_OK);
+		char i4[200];
 		zmsg_addstr(clientmsg,strcpy(i4,uuid));
-					
+		zmsg_dump(clientmsg);
 		zmsg_send(&clientmsg,this->Z_Sckt);
 		zmsg_destroy(&clientmsg);
 
@@ -165,9 +189,15 @@ void titanic_broker::message_from_component(zmsg_t* msg,zframe_t* envelope,char*
 		this->Dispatcher->Enqueue(string(uuid),string(service),msg);
 	}
 	else if(strcmp(command,TMSG_TYPE_REPLY)==0){
-		this->send_to_component(msg,command,service,origin,envelope,"titanic.reply");
+		zmsg_dump(msg);
+		zmsg_pushstr(msg,command);
+		zmsg_pushstr(msg,service);
+		zmsg_pushstr(msg,origin);
+		zmsg_wrap(msg,envelope);
+		zmsg_send(&msg,this->Z_Sckt);
 	}
 }
+
 void titanic_broker::message_from_worker(zmsg_t* msg,zframe_t* envelope,char* origin,char* service,char* command,char*uuid){
 	
 	if(strcmp(command,TMSG_TYPE_READY)==0){
@@ -182,9 +212,9 @@ void titanic_broker::message_from_worker(zmsg_t* msg,zframe_t* envelope,char* or
 		this->Dispatcher->Dequeue(string(uuid),string(service));
 		zmsg_pushstr(msg,uuid);
 		//send it to the reply handler on a different thread to save to the file system.
-		this->send_to_component(msg,command,service,origin,envelope,"titanic.request");
+		this->send_to_component(msg,command,service,origin,envelope,"titanic.reply");
 		//send it to the publisher so that we can notify those clients that dont want to ping.
-		this->send_to_component(msg,command,service,origin,envelope,"titanic.publish");
+		//this->send_to_component(msg,command,service,origin,envelope,"titanic.publish");
 					
 					
 	}

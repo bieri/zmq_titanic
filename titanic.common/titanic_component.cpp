@@ -75,6 +75,7 @@ int titanic_component::send_to_broker(char* messagetype,zmsg_t* msg){
 	//	that way that our message confirms to the specification set in "tmsg_api.h"
     zmsg_addstr (msg, this->Svc_Name.c_str());
 	zmsg_addstr (msg, TWRK_SVC_VER);
+	zmsg_addstr (msg,messagetype);
 	zmsg_pushstr(msg,"");
 	zmsg_pushstr(msg,"titanic.broker");
     if (this->Verbose) {

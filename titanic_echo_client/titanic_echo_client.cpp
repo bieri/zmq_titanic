@@ -3,11 +3,11 @@
 
 #include "stdafx.h"
 #include <czmq.h>
-#include "tmsg_api.h"
+#include <tmsg_api.h>
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	zclock_sleep(10000);
+	zclock_sleep(20000);
 	char* broker_loc = "tcp://localhost:5555";
 
 	zctx_t* ctx = zctx_new();
@@ -18,12 +18,12 @@ int _tmain(int argc, _TCHAR* argv[])
 	zmsg_addstr(msg,"Echo");
 	zmsg_addstr(msg,TMSG_TYPE_REQUEST);
 	
-	int64_t sleep = 1000*1000;
+	int64_t sleep = 10*1000;
 	zclock_sleep(sleep);
 	zmsg_add(msg,zframe_new(&sleep,sizeof(sleep)));
 	zmsg_send(&msg,scket);
 	zmsg_t* reply =  zmsg_recv(scket);
-
+	zmsg_dump(reply);
 	return 0;
 }
 

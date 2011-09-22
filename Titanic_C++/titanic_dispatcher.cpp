@@ -57,11 +57,11 @@ titanic_dispatcher::titanic_dispatcher(string brokername,int hbeat,int reconn,vo
 	//This is only to be used in the dispatch method. remember that this is not in fact thread safe.
 	//so this entire class must be treated as non thread safe and must be on the same thread as the 
 	//broker that is calling it. Eventually i will fix this.
-	this->socket=socket;
+	this->socket=skt;
 }
 titanic_dispatcher::~titanic_dispatcher(void)
 {
-
+	
 }
 
 void titanic_dispatcher::Start(){
@@ -155,7 +155,7 @@ void titanic_dispatcher::Enqueue(string uuid,string svc,zmsg_t* opaque_frms){
 	else{
 		worker_t* wrk = this->worker_get(serv);
 		this->work_status_set(wrk->identity,uuid);
-		this->send_work(wrk,TMSG_TYPE_REQUEST,NULL,opaque_frms);
+		this->send_work(wrk,TMSG_TYPE_REQUEST,(char*)svc.c_str(),(char*)uuid.c_str(),opaque_frms);
 	}
 }
 void titanic_dispatcher::Dequeue(string uuid,string svc){
@@ -249,7 +249,7 @@ void titanic_dispatcher::worker_del(worker_t* worker){
 	//Send a disconnect so this thing fails gracefully. 
 	//And the worker doesnt just sit there forever.
 	if(!this->socket)
-		send_work(worker,TMSG_TYPE_DISCONNECT,NULL,NULL);
+		send_work(worker,TMSG_TYPE_DISCONNECT,NULL,NULL,NULL);
 
 	if (worker->service) {
 		service_t* svc = worker->service;
@@ -277,13 +277,13 @@ void titanic_dispatcher::worker_add(string svcname,zframe_t* addr,int hbeatby){
 
 }
 
-void titanic_dispatcher::send_work(worker_t* worker,char *command,char *option, zmsg_t *msg){
+void titanic_dispatcher::send_work(worker_t* worker,char *command,char *option,char* uuid, zmsg_t *msg){
 	msg = msg? zmsg_dup (msg): zmsg_new ();
 
+	zmsg_pushstr(msg,uuid);
 	//  Stack protocol envelope to start of message
-	if (option)
-		zmsg_pushstr (msg, option);
 	zmsg_pushstr (msg, command);
+	zmsg_pushstr (msg, option);
 	zmsg_pushstr (msg, TWRK_WRK_VER);
 
 	//  Stack routing envelope to start of message
@@ -372,7 +372,7 @@ void titanic_dispatcher::work_requeue(string uuid){
 	else{
 		worker_t* wrk = this->worker_get(serv);
 		this->work_status_set(wrk->identity,uuid);
-		this->send_work(wrk,TMSG_TYPE_REQUEST,NULL,msg);
+		this->send_work(wrk,TMSG_TYPE_REQUEST,(char*)serv->name.c_str(),(char*) uuid.c_str(),msg);
 	}
 }
 

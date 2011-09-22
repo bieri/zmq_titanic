@@ -70,7 +70,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)include\;$(SolutionDir)dependencies\zmq_x64\include\;$(SolutionDir)dependencies\czmq\include\;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)titanic.common\;$(SolutionDir)include\;$(SolutionDir)dependencies\zmq_x64\include\;$(SolutionDir)dependencies\czmq\include\;$(IncludePath)</IncludePath>
     <ReferencePath>$(SolutionDir)dependencies\zmq_x64\lib;$(SolutionDir)dependencies\czmq\lib;$(ReferencePath)</ReferencePath>
     <LibraryPath>$(SolutionDir)dependencies\zmq_x64\lib;$(SolutionDir)dependencies\czmq\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>

@@ -7,9 +7,10 @@
 int _tmain(int argc, _TCHAR* argv[])
 {
 	zctx_t* context = zctx_new();
-	titanic_reply* component = new titanic_reply(context,TADD_PRIV,100*1000,100*1000);
+	titanic_reply* component = new titanic_reply(context,TADD_COMP,100*1000,100*1000);
 	//Lets give the broker time to get bound up and set up all the pollers on its sockets
-	zclock_sleep(100);
+	zclock_sleep(1000);
+	cout << "Starting Reply Handler";
 	component->Start();
 	delete component;
 	return NULL;

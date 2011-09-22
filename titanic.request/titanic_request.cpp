@@ -44,9 +44,8 @@ void titanic_request::Start(){
 		zmsg_t* dups = zmsg_dup(incoming);
 
 		zmsg_dump(incoming);
-		zclock_sleep(100);
 		zmsg_send(&incoming,this->Pipe);
-
+		
 		if(!titanic_persistence::store(TMSG_TYPE_REQUEST,(char*)uid.c_str(),dups)){
 			throw runtime_error(strcat( "Unable to store request with id of " ,(char*) &uid));
 		}

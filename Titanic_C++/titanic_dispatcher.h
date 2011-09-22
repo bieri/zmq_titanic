@@ -101,7 +101,7 @@ private:
 	void service_add(string name);
 	void service_del(string name);
 
-	void send_work(worker_t* worker,char *command,char *option, zmsg_t *msg);
+	void send_work(worker_t* worker,char *command,char *option,char* uuid, zmsg_t *msg);
 	
 	void work_status_set(string workerid,string uuid);
 	void work_status_clear(string workerid);

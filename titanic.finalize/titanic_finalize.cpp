@@ -8,7 +8,7 @@
 using namespace std;
 
 titanic_finalize::titanic_finalize(zctx_t* ctx,string brokername,int hbeat,int reconn,int cleanupivl)
-	:titanic_component(ctx,"titanic.finalize",brokername,ZMQ_REP,hbeat,reconn)
+	:titanic_component(ctx,"titanic.finalize",brokername,ZMQ_XREP,hbeat,reconn)
 {
 	this->Cleanup_Ivl = cleanupivl;
 }
