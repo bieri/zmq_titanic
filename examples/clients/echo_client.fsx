@@ -1,4 +1,6 @@
-﻿// NOTE:  changing the current directory is the easiest way to ensure
+﻿// TODO: switch libzmq.dll to use relative paths!!!
+
+// NOTE:  changing the current directory is the easiest way to ensure
 //        the (native) libzmq.dll is available for use in the REPL 
 System.Environment.CurrentDirectory <- 
    @"C:\working\projects\ThirdParty\fs-zmq\deploy"
