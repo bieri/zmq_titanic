@@ -37,6 +37,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{8A
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "titanic.common", "titanic.common\titanic.common.vcxproj", "{3A1EE71B-8FC0-479D-86D8-051743E06E40}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "titanic.publish", "titanic.publish\titanic.publish.vcxproj", "{F3F144B1-A681-48E8-9A6D-8A665F7B8591}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -112,6 +114,15 @@ Global
 		{3A1EE71B-8FC0-479D-86D8-051743E06E40}.WithOpenPGM|Win32.ActiveCfg = Release|Win32
 		{3A1EE71B-8FC0-479D-86D8-051743E06E40}.WithOpenPGM|Win32.Build.0 = Release|Win32
 		{3A1EE71B-8FC0-479D-86D8-051743E06E40}.WithOpenPGM|x64.ActiveCfg = Release|Win32
+		{F3F144B1-A681-48E8-9A6D-8A665F7B8591}.Debug|Win32.ActiveCfg = Debug|Win32
+		{F3F144B1-A681-48E8-9A6D-8A665F7B8591}.Debug|Win32.Build.0 = Debug|Win32
+		{F3F144B1-A681-48E8-9A6D-8A665F7B8591}.Debug|x64.ActiveCfg = Debug|Win32
+		{F3F144B1-A681-48E8-9A6D-8A665F7B8591}.Release|Win32.ActiveCfg = Release|Win32
+		{F3F144B1-A681-48E8-9A6D-8A665F7B8591}.Release|Win32.Build.0 = Release|Win32
+		{F3F144B1-A681-48E8-9A6D-8A665F7B8591}.Release|x64.ActiveCfg = Release|Win32
+		{F3F144B1-A681-48E8-9A6D-8A665F7B8591}.WithOpenPGM|Win32.ActiveCfg = Release|Win32
+		{F3F144B1-A681-48E8-9A6D-8A665F7B8591}.WithOpenPGM|Win32.Build.0 = Release|Win32
+		{F3F144B1-A681-48E8-9A6D-8A665F7B8591}.WithOpenPGM|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -122,5 +133,6 @@ Global
 		{965938EB-3FEC-499C-BC58-B24D2B30452A} = {BC99F965-7668-4C68-BF04-2DAE37F99C4A}
 		{A04AD06C-3A8B-4B2B-B438-8486D1FDBDB3} = {BC99F965-7668-4C68-BF04-2DAE37F99C4A}
 		{AD5632A1-6AD9-4FB5-BECC-CD662FB22CD1} = {BC99F965-7668-4C68-BF04-2DAE37F99C4A}
+		{F3F144B1-A681-48E8-9A6D-8A665F7B8591} = {BC99F965-7668-4C68-BF04-2DAE37F99C4A}
 	EndGlobalSection
 EndGlobal
