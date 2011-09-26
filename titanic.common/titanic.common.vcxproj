@@ -149,6 +149,7 @@
     <ClInclude Include="titanic.common.h" />
     <ClInclude Include="titanic_component.h" />
     <ClInclude Include="titanic_persistence.h" />
+    <ClInclude Include="titanic_worker.h" />
     <ClInclude Include="tmsg_api.h" />
   </ItemGroup>
   <ItemGroup>
@@ -175,6 +176,7 @@
     <ClCompile Include="titanic.common.cpp" />
     <ClCompile Include="titanic_component.cpp" />
     <ClCompile Include="titanic_persistence.cpp" />
+    <ClCompile Include="titanic_worker.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

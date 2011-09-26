@@ -5,6 +5,7 @@
 #include <czmq.h>
 #include <tmsg_api.h>
 #include <string>
+#include <titanic_worker.h>
 
 using namespace std;
 
@@ -14,15 +15,31 @@ int64_t static inline SleepAndSquare(int64_t* duration){
 	return val * val;
 }
 
+zmsg_t*  process_message(zmsg_t* msg){
+	zframe_t* data = zmsg_pop(msg);
+	int64_t* vOut = (int64_t*) zframe_data(data);
+	int64_t res = SleepAndSquare(vOut);
+	zmsg_t* rep = zmsg_new();
+
+	zmsg_add(rep,zframe_new(&res,sizeof(res)));
+	return rep;
+}
+
 int _tmain(int argc, _TCHAR* argv[])
 {
 	zclock_sleep(15000);
 	char* broker_loc = "tcp://localhost:5555";
+	titanic_worker* worker = new titanic_worker(broker_loc,10000);
+	while(TRUE){
+		zmsg_t* req_msg = worker->get_work();
+		zmsg_t* rep_msg = process_message(req_msg);
+		worker->send_complete(rep_msg);
+		zmsg_destroy(&req_msg);
+	}
+	return 0;
+}
 
-	zctx_t* ctx = zctx_new();
-	void* scket = zsocket_new(ctx,ZMQ_ROUTER);
-	zsocket_connect(scket,broker_loc);
-
+	/*
 	zmsg_t* r_msg = zmsg_new();
 	zmsg_addstr(r_msg,TWRK_WRK_VER);
 	zmsg_addstr(r_msg,"Echo");
@@ -101,7 +118,4 @@ int _tmain(int argc, _TCHAR* argv[])
 			cout<<"Heartbeat Sent.";
             heartbeat_at = zclock_time () + 10000;
         }
-	}
-	return 0;
-}
-
+	}*/

@@ -2,16 +2,34 @@
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Titanic_C++", "Titanic_C++\Titanic_C++.vcxproj", "{C933702B-8F96-4230-ADB7-775001BAE22A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3A1EE71B-8FC0-479D-86D8-051743E06E40} = {3A1EE71B-8FC0-479D-86D8-051743E06E40}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "titanic_echo_worker", "titanic_echo_worker\titanic_echo_worker.vcxproj", "{A07FDC58-F545-469E-98F9-FD0A4BD5CE52}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3A1EE71B-8FC0-479D-86D8-051743E06E40} = {3A1EE71B-8FC0-479D-86D8-051743E06E40}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "titanic_echo_client", "titanic_echo_client\titanic_echo_client.vcxproj", "{DDF29EDA-D228-4940-AEBD-89558BA8ED95}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3A1EE71B-8FC0-479D-86D8-051743E06E40} = {3A1EE71B-8FC0-479D-86D8-051743E06E40}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "titanic.request", "titanic.request\titanic.request.vcxproj", "{AD5632A1-6AD9-4FB5-BECC-CD662FB22CD1}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3A1EE71B-8FC0-479D-86D8-051743E06E40} = {3A1EE71B-8FC0-479D-86D8-051743E06E40}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "titanic.reply", "titanic.reply\titanic.reply.vcxproj", "{965938EB-3FEC-499C-BC58-B24D2B30452A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3A1EE71B-8FC0-479D-86D8-051743E06E40} = {3A1EE71B-8FC0-479D-86D8-051743E06E40}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "titanic.finalize", "titanic.finalize\titanic.finalize.vcxproj", "{A04AD06C-3A8B-4B2B-B438-8486D1FDBDB3}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3A1EE71B-8FC0-479D-86D8-051743E06E40} = {3A1EE71B-8FC0-479D-86D8-051743E06E40}
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Components", "Components", "{BC99F965-7668-4C68-BF04-2DAE37F99C4A}"
 EndProject
