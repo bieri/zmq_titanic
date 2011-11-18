@@ -16,6 +16,33 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="ReadMe.txt" />
+    <None Include="C:\Users\kevin.bieri\Downloads\steamer_48.png">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="C:\Users\kevin.bieri\Downloads\steamer_64.png">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="C:\Users\kevin.bieri\Downloads\steamer_128.png">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="C:\Users\kevin.bieri\Downloads\steamer_256.png">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="C:\Users\kevin.bieri\Downloads\steamer_16.png">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="C:\Users\kevin.bieri\Downloads\steamer_24.png">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="C:\Users\kevin.bieri\Downloads\steamer_32.png">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="icon4.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="C:\steamer_256.ico">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -28,6 +55,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="titanic_dispatcher.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -44,5 +74,10 @@
     <ClCompile Include="titanic_dispatcher.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Titanic_C++.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

@@ -2,10 +2,12 @@
 #include "titanic_worker.h"
 #include "tmsg_api.h"
 
-titanic_worker::titanic_worker(char* broker_address,int64_t hbeat_ivl)
+titanic_worker::titanic_worker(char* broker_address,char* svcname,int64_t hbeat_ivl)
 {
 	this->Broker_Address = broker_address;
 	this->Heartbeat_Ivl = hbeat_ivl;
+	this->ServiceName = svcname;
+	this->has_connected = false;
 }
 
 
@@ -47,7 +49,8 @@ zmsg_t* titanic_worker::get_work(void){
 				break;
 			}
 		}
-		if(zclock_time()>this->Heartbeat_At){
+		int c_time = zclock_time()-this->Heartbeat_At;
+		if(c_time>0){
 			this->heart_beat();
 			this->Heartbeat_At = zclock_time() + this->Heartbeat_Ivl;
 		}
@@ -67,6 +70,9 @@ void titanic_worker::connect(void){
 		this->Context = zctx_new();
 		this->Socket = zsocket_new(this->Context,ZMQ_ROUTER);
 		zsocket_connect(this->Socket,this->Broker_Address);
+		this->Heartbeat_At = zclock_time() + this->Heartbeat_Ivl;
+		this->has_connected = true;
+		zclock_sleep(10 * ZMQ_POLL_MSEC);
 	}
 }
 
@@ -92,11 +98,16 @@ void titanic_worker::append_framing(zmsg_t* msg,char* command,char* uuid){
 	
 	if(strlen(uuid)!=0)
 		zmsg_pushstr(msg,uuid);
+	zmsg_addstr(msg,TWRK_WRK_VER);
+	zmsg_addstr(msg,this->ServiceName);
+	zmsg_addstr(msg,command);
+	zmsg_pushstr(msg,"");
+	zmsg_pushstr(msg,"titanic.frontend");
 
-	zmsg_pushstr(msg,command);
+	/*zmsg_pushstr(msg,command);
 	zmsg_pushstr(msg,this->ServiceName);
 	zmsg_pushstr(msg,TWRK_WRK_VER);
 	zmsg_pushstr(msg,"");
-	zmsg_pushstr(msg,"titanic.frontend");
+	zmsg_pushstr(msg,"titanic.frontend");*/
 	
 }

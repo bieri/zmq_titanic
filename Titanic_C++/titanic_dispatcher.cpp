@@ -122,18 +122,24 @@ void titanic_dispatcher::Start(){
 }
 
 void titanic_dispatcher::Handle_HeartBeat(zframe_t* address,string svcname){
-	service_t* svc = (this->Svcs.find(svcname))->second;
-	const char* w_name = (const char*) zframe_strdup(address);
-	worker_t* wrk =(worker_t*) zlist_first(svc->avail_workers);
-	while(wrk){
-		const char* w_id = wrk->identity.c_str();
+	Hash_str_svc::iterator i = this->Svcs.find(svcname);
+	if(i==this->Svcs.end()){
+		worker_add(svcname,address,100);
+	}
+	else{
+		service_t* svc = (i)->second;
+		const char* w_name = (const char*) zframe_strdup(address);
+		worker_t* wrk =(worker_t*) zlist_first(svc->avail_workers);
+		while(wrk){
+			const char* w_id = wrk->identity.c_str();
 		
-		if(strcmp(w_id,w_name )==0){
-			wrk->expiry = zclock_time() + wrk->heartbeat_ivl;
-		}
-		wrk = (worker_t*) zlist_next(svc->avail_workers);
-		continue;
+			if(strcmp(w_id,w_name )==0){
+				wrk->expiry = zclock_time() + wrk->heartbeat_ivl;
+			}
+			wrk = (worker_t*) zlist_next(svc->avail_workers);
+			continue;
 
+		}
 	}
 }
 void titanic_dispatcher::Handle_Ready(zframe_t* address,string svcname){

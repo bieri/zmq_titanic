@@ -5,7 +5,7 @@
 class __declspec(dllexport) titanic_worker
 {
 public:
-	titanic_worker(char* broker_address,int64_t ivl);
+	titanic_worker(char* broker_address,char* svcname,int64_t ivl);
 	~titanic_worker(void);
 	
 	zmsg_t* get_work(void);

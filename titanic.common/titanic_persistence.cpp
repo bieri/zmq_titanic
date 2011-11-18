@@ -33,11 +33,13 @@ namespace titanic_persistence{
 	}
 
 	bool store(char* msgtype,char* uuid,zmsg_t* msg){
-		string fn = titanic_persistence::get_filename(msgtype,uuid);	
+		string fn = titanic_persistence::get_filename(msgtype,uuid);
+		cout << "Storing at: " << fn.c_str() << "\\n";
 		//FILE * f  = fopen(fn,"w+");
 		FILE * f;
 		char * m = "w";
 		fopen_s(&f,fn.c_str(),m);
+		
 		zmsg_save(msg,f);
 		fclose(f);
 		return true;
