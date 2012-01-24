@@ -154,6 +154,7 @@
     <ClInclude Include="titanic.common.h" />
     <ClInclude Include="titanic_component.h" />
     <ClInclude Include="titanic_persistence.h" />
+    <ClInclude Include="titanic_types.h" />
     <ClInclude Include="titanic_worker.h" />
     <ClInclude Include="tmsg_api.h" />
   </ItemGroup>

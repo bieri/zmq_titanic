@@ -4,6 +4,7 @@
 #include <RpcDce.h>
 #include <uuids.h>
 #include <iostream>
+#include <fstream>
 #include "tmsg_api.h"
 
 using namespace std;
@@ -34,14 +35,18 @@ namespace titanic_persistence{
 
 	bool store(char* msgtype,char* uuid,zmsg_t* msg){
 		string fn = titanic_persistence::get_filename(msgtype,uuid);
-		cout << "Storing at: " << fn.c_str() << "\\n";
+		ofstream  outstream;
+		outstream.open(fn.c_str(),ios::out);
+		cout << "Storing at: " << fn.c_str() << endl;
 		//FILE * f  = fopen(fn,"w+");
-		FILE * f;
-		char * m = "w";
-		fopen_s(&f,fn.c_str(),m);
-		
-		zmsg_save(msg,f);
-		fclose(f);
+		zframe_t *frame = zmsg_first (msg);
+		while (frame) {
+			size_t frame_size = zframe_size (frame);
+			string strval =string( zframe_strdup(frame));
+			outstream << strval.c_str() << endl;
+			frame = zmsg_next (msg);
+		}
+		outstream.close();
 		return true;
 	}
 	

@@ -3,6 +3,7 @@
 #define TADD_PUB "tcp://*:5555"
 #define TADD_PRIV "tcp://*:5556"
 #define TADD_COMP "tcp://127.0.0.1:5556" //This one is for the components to use.
+#define TADD_PUBSUB "tcp://*:5557"
 //#define TADD_INPROC "tcp://127.0.0.1:5556"
 #define TMSG_DIR "E:\\titanic.messages"
 
@@ -28,3 +29,5 @@
 //static const char* TMSG_TYPES [] = {
 //    NULL, "READY", "REQUEST", "REPLY","PUBLISH", "HEARTBEAT", "DISCONNECT","FINALIZE","AVAILABLE"
 //};
+
+#define TWRK_HBT_IVL 10000

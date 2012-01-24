@@ -3,14 +3,14 @@
 #include <iostream>
 #include <string>
 #include "titanic_dispatcher.h"
-
+#include "titanic_types.h"
 using namespace std;
 
 class titanic_broker
 {
 public:
 	titanic_broker(string address,string compaddress);
-	titanic_broker(string frontside,string compaddress,int verbose);
+	titanic_broker(string frontside,string compaddress,INT_ verbose);
 	~titanic_broker(void);
 
 	char* Sckt_Address;

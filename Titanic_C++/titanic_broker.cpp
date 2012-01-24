@@ -18,7 +18,7 @@ titanic_broker::titanic_broker(string frontside,string componentside)
 	//set up the dispatcher
 	this->Dispatcher = new titanic_dispatcher(this->Sckt_Address,10000,10000,this->Z_Sckt);
 }
-titanic_broker::titanic_broker(string frontside,string componentside,int verbose)
+titanic_broker::titanic_broker(string frontside,string componentside,INT_ verbose)
 {
 	this->Sckt_Address = (char*) frontside.c_str();
 	this->Comp_Address =(char*)  componentside.c_str();
@@ -46,6 +46,7 @@ titanic_broker::~titanic_broker(void)
 	zctx_destroy(&this->Context);
 	free(this->Sckt_Address);
 	this->Verbose = NULL;
+	delete this->Dispatcher;
 
     free (this);
 }
@@ -94,7 +95,7 @@ void titanic_broker::Start(void){
                 break;          //  Interrupted
             if (this->Verbose) {
                 zclock_log ("I: received message:");
-                //zmsg_dump (msg);
+                zmsg_dump (msg);
             }
 			//Conditionally pop off the first frame. its a pain to use xrep.
 			zframe_t* f_1 = zmsg_first(msg);
@@ -106,6 +107,7 @@ void titanic_broker::Start(void){
 			}
 			this->process_msg(msg);
 		}
+		this->Dispatcher->Services_Purge();
     }
     if (zctx_interrupted)
         printf ("W: interrupt received, shutting down…\n");
@@ -212,9 +214,16 @@ void titanic_broker::message_from_worker(zmsg_t* msg,zframe_t* envelope,char* or
 		this->Dispatcher->Dequeue(string(uuid),string(service));
 		zmsg_pushstr(msg,uuid);
 		//send it to the reply handler on a different thread to save to the file system.
+		
+		zmsg_t* msg_dup = zmsg_dup(msg);
+		zframe_t* envelope_dup = zframe_dup(envelope);
+		char* origin_dup = strdup(origin);
+		char* svc_dup = strdup(service);
+		char* cmd_dup = strdup(command);
+
 		this->send_to_component(msg,command,service,origin,envelope,"titanic.reply");
 		//send it to the publisher so that we can notify those clients that dont want to ping.
-		//this->send_to_component(msg,command,service,origin,envelope,"titanic.publish");
+		this->send_to_component(msg_dup,cmd_dup,svc_dup,origin_dup,envelope_dup,"titanic.publish");
 					
 					
 	}

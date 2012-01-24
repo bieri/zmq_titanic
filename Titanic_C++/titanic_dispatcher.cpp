@@ -3,6 +3,8 @@
 #include <hash_map>
 #include <hash_set>
 #include <tmsg_api.h>
+#include <titanic_types.h>
+
 using namespace std;
 using namespace stdext;
 
@@ -38,7 +40,7 @@ worker_t::worker_t(){
 	this->service=NULL;
 	this->expiry=0;
 }
-worker_t::worker_t(string identity,zframe_t* addy,service_t* svc,int64_t heartbeat_ivl){
+worker_t::worker_t(string identity,zframe_t* addy,service_t* svc,INT_ heartbeat_ivl){
 	this->identity.assign(identity);
 	this->address = addy;
 	this->service = svc;
@@ -49,9 +51,10 @@ worker_t::~worker_t(){
 	this->identity.erase();
 	zframe_destroy(&this->address);
 }
-#pragma endregion Includes service_t, worker_t and various typedefs
+#pragma endregion 
+//Includes service_t, worker_t and various typedefs
 
-titanic_dispatcher::titanic_dispatcher(string brokername,int hbeat,int reconn,void* skt)
+titanic_dispatcher::titanic_dispatcher(string brokername,INT_ hbeat,INT_ reconn,void* skt)
 	:titanic_component(NULL,"titanic.discovery",brokername,ZMQ_ROUTER,hbeat,reconn)
 {
 	//This is only to be used in the dispatch method. remember that this is not in fact thread safe.
@@ -66,65 +69,12 @@ titanic_dispatcher::~titanic_dispatcher(void)
 
 void titanic_dispatcher::Start(){
 	
-	//this->connect_to_broker();
- //   zmsg_t *reply = NULL;
-	//Hash_str_svc::iterator iter;
-
- //   while (TRUE) {
-	//	//We are assured that we only want HeartBeats and Handshakes.
- //       zmsg_t *incoming = this->get_work(TMSG_TYPE_READY);
-	//	
-	//	int returnCode=0;
- //       if (!incoming)
- //           break;      //  Interrupted, exit
- //       
-	//	zframe_t* empty2 = zmsg_pop(incoming);
-	//	
-	//	//disassemble our incoming and assemble the reply, all in one operation.
- //       reply = zmsg_new ();
-	//	zmsg_add(reply,zmsg_pop(incoming));
-	//	
-	//	char* command= zmsg_popstr(incoming);
-	//	
-	//	//service please!
-	//	char* svcname= zmsg_popstr(incoming);
-	//	iter;// = lookup.find(svcname);
-	//	
-	//	if(command=="AVAILABLE"){
-	//		if(iter !=Svcs.end() && (zclock_time() -  iter->second)>this->HeartBeat_Ivl){
-	//			returnCode = 200;
-	//		}
-	//		else{
-	//			if(iter !=Svcs.end()){
-	//				Svcs.erase(iter);
-	//			}
-	//			returnCode=400;
-	//		}
-	//	}
-	//	if(command=="READY" || command=="HEARTBEAT"){
-	//		if(iter!=Svcs.end()){
-	//			Svcs.erase(iter);
-	//		}
-	//		Svcs[svcname]=zclock_time();
-	//	}
-
-	//	if(returnCode>0){
-	//		//build up a response b/c we are expecting one on the other end.
-	//		zmsg_addstr(reply,(char*) returnCode);
-	//		zmsg_send(&reply,this->Pipe);
-	//	}
-
- //       zmsg_destroy (&incoming);
-	//	zmsg_destroy (&reply);
-	//	free(&returnCode);
-
-    //}
 }
 
 void titanic_dispatcher::Handle_HeartBeat(zframe_t* address,string svcname){
 	Hash_str_svc::iterator i = this->Svcs.find(svcname);
 	if(i==this->Svcs.end()){
-		worker_add(svcname,address,100);
+		worker_add(svcname,address,TWRK_HBT_IVL);
 	}
 	else{
 		service_t* svc = (i)->second;
@@ -143,7 +93,7 @@ void titanic_dispatcher::Handle_HeartBeat(zframe_t* address,string svcname){
 	}
 }
 void titanic_dispatcher::Handle_Ready(zframe_t* address,string svcname){
-	worker_add(svcname,address,100);
+	worker_add(svcname,address,TWRK_HBT_IVL);
 }
 
 void titanic_dispatcher::Enqueue(string uuid,string svc,zmsg_t* opaque_frms){
@@ -155,6 +105,7 @@ void titanic_dispatcher::Enqueue(string uuid,string svc,zmsg_t* opaque_frms){
 	service_t* serv = this->Svcs.find(svc)->second;
 	if(serv->avail_count==0){
 		//We queue it and expect someone to pick it up later from the msg directory.
+		serv->req2.push_back(uuid);
 		zlist_append(serv->requests, &uuid);
 		zmsg_destroy(&opaque_frms);
 	}
@@ -175,22 +126,11 @@ void titanic_dispatcher::Dequeue(string uuid,string svc){
 	}
 }
 
-
 bool titanic_dispatcher::Service_Avail(string name){
 	return (this->Svcs.find(name)!=Svcs.end());
 }
 
-
-//PRIVATE Methods::
-void titanic_dispatcher::service_add(service_t* sv){
-	this->Svcs[sv->name] = sv;
-}
-void titanic_dispatcher::service_add(string name){
-	service_t* sv = new service_t(name);
-	service_add(sv);
-}
-//This is called only when we are destructing this bad boy.
-void titanic_dispatcher::services_purge(void){
+void titanic_dispatcher::Services_Purge(void){
 	Hash_str_svc::iterator svcs_iter = this->Svcs.begin();
 	service_t* service;
 	for (; svcs_iter != Svcs.end(); ++svcs_iter){
@@ -200,10 +140,11 @@ void titanic_dispatcher::services_purge(void){
 			workers_purge(service->avail_workers); //Clean up the service parts.
 			break;                  //  Services are around to accept requests.
 		}
-        if (this->Verbose)
-            zclock_log ("I: deleting expired worker: %s",service->name);
+
 		//now that we have 
 		if(0==service->avail_workers){
+			if (this->Verbose)
+				zclock_log ("I: deleting expired service: %s",service->name);
 			string key;
 			key.assign(service->name);
 			service_del (key);
@@ -211,6 +152,18 @@ void titanic_dispatcher::services_purge(void){
         
 	}
 }
+
+//PRIVATE Methods::
+void titanic_dispatcher::service_add(service_t* sv){
+	//this->Svcs[sv->name] = sv;
+	this->Svcs.insert(pair<string,service_t*>(sv->name,sv));
+}
+void titanic_dispatcher::service_add(string name){
+	service_t* sv = new service_t(name);
+	service_add(sv);
+}
+//This is called only when we are destructing this bad boy.
+
 void titanic_dispatcher::service_del(string name){
 	//string key = name->substr(0,name->length()); 
 	service_t* svc = (this->Svcs.find(name) ->second);
@@ -239,7 +192,7 @@ void titanic_dispatcher::workers_purge(zlist_t* workers){
 	//double check this whole thing.
 	int64_t zc = zclock_time();
     while (worker) {
-        if (zc  < worker->expiry){
+        if (zc  < (worker->expiry + 100)){
 			worker = (worker_t*) zlist_next(workers);
             continue;                  //  Worker is alive, we're done here
 		}
@@ -265,7 +218,7 @@ void titanic_dispatcher::worker_del(worker_t* worker){
 	//Do some memory management.
 	delete worker;
 }
-void titanic_dispatcher::worker_add(string svcname,zframe_t* addr,int hbeatby){
+void titanic_dispatcher::worker_add(string svcname,zframe_t* addr,INT_ hbeatby){
 	
 	if(!this->Service_Avail(svcname)){
 		this->service_add(svcname);
@@ -367,7 +320,7 @@ void titanic_dispatcher::work_requeue(string uuid){
 	//according to the api this is an empty frame.
 	zframe_t* e_fr = zmsg_pop(msg);
 	zframe_destroy(&e_fr);
-	//wish i could just calll Enqueue here, but i need them at the frotn of the queue, after all
+	//wish i could just calll Enqueue here, but i need them at the front of the queue, after all
 	//they were already being processed so we should at least put them at the front of the line.
 	service_t* serv = this->Svcs.find(svc)->second;
 	if(serv->avail_count==0){
@@ -417,7 +370,7 @@ void titanic_dispatcher::Test(void){
 	
 	//Worker Tests
 	//This worker add creates a new service to go with it.
-	this->worker_add(svcname_str,zframe_new(addy,strlen(addy)),100);
+	this->worker_add(svcname_str,zframe_new(addy,strlen(addy)),TWRK_HBT_IVL);
 	if(!this->Service_Avail(svcname_str))
 		assert("fails");
 
