@@ -11,20 +11,8 @@
 using namespace std;
 
 
-class worker_t;
-
-class service_t {
-public:
-	service_t(string name);
-	service_t(string name,zlist_t* wrkrs);
-	service_t(void);
-	~service_t(void);
-	string name;					//  Service name
-	deque<string> req2;
-	list<string> requests;			//	UUIDs of strings that need to be distributed.
-	list<worker_t> avail_workers;	//	List of workers that are available to receive work.
-    size_t avail_count;             //  Number of workers that are available.
-};
+class service_t;
+//class worker_t;
 class worker_t {
 public:
 	worker_t(string identity,zframe_t* addy,service_t* svc,INT_ heartbeat_ivl);
@@ -35,6 +23,19 @@ public:
     service_t *service;         //  Owning service, if known
     INT_ expiry;             //  Expires at unless heartbeat
 	INT_ heartbeat_ivl;			// Like it says
+};
+
+class service_t {
+public:
+	service_t(string name);
+	service_t(string name,deque<worker_t> wrkrs);
+	service_t(void);
+	~service_t(void);
+	string name;					//  Service name
+	deque<string> req2;
+	deque<string> requests;			//	UUIDs of strings that need to be distributed.
+	deque<worker_t> avail_workers;	//	List of workers that are available to receive work.
+    size_t avail_count;             //  Number of workers that are available.
 };
 
 typedef hash_set<string> Hash_str;
@@ -76,7 +77,7 @@ private:
 	void* socket;
 
 	//Methods
-	void workers_purge(zlist_t* workers);
+	void workers_purge(deque<worker_t> workers);
 	void worker_add(string svcname,zframe_t* address,INT_ hbeatby);
 	void worker_del(worker_t* worker);
 	worker_t* worker_get(service_t* svcname);

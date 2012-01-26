@@ -3,7 +3,7 @@
 #include <hash_map>
 #include <hash_set>
 #include <tmsg_api.h>
-#include <titanic_types.h>
+//#include <titanic_types.h>
 
 using namespace std;
 using namespace stdext;
@@ -12,26 +12,26 @@ using namespace stdext;
 //Helper types.
 service_t::service_t(void){
 	this->name="";
-	this->avail_workers = zlist_new();
-	this->requests = zlist_new();
+	//this->avail_workers = zlist_new();
+	//this->requests = zlist_new();
 	this->avail_count = 0;
 }
 service_t::service_t(string name){
 	this->name.assign(name);
-	this->avail_workers=zlist_new();
-	this->requests=zlist_new();
+	//this->avail_workers=zlist_new();
+	//this->requests=zlist_new();
 	this->avail_count = 0;
 }
-service_t::service_t(string name,zlist_t* wrkrs){
+service_t::service_t(string name,deque<worker_t> wrkrs){
 	this->name.assign(name);
-	this->avail_workers=wrkrs;
-	this->requests=zlist_new();
+	avail_workers.assign(wrkrs.front(),wrkrs.back());
+	/*this->requests=zlist_new();*/
 	this->avail_count =0;
 }
 service_t::~service_t(){
 	this->name.erase();
-	zlist_destroy(&(this->avail_workers));
-	zlist_destroy(&(this->requests));
+	/*zlist_destroy(&(this->avail_workers));
+	zlist_destroy(&(this->requests));*/
 }
 
 worker_t::worker_t(){
@@ -79,16 +79,16 @@ void titanic_dispatcher::Handle_HeartBeat(zframe_t* address,string svcname){
 	else{
 		service_t* svc = (i)->second;
 		const char* w_name = (const char*) zframe_strdup(address);
-		worker_t* wrk =(worker_t*) zlist_first(svc->avail_workers);
-		while(wrk){
-			const char* w_id = wrk->identity.c_str();
-		
+		deque<worker_t>::iterator wrk_it = svc->avail_workers.begin();
+		bool iterate = true;
+		while(iterate){
+			iterate = wrk_it != svc->avail_workers.end();
+			const char* w_id = wrk_it->identity.c_str();
+			
 			if(strcmp(w_id,w_name )==0){
-				wrk->expiry = zclock_time() + wrk->heartbeat_ivl;
+				wrk_it->expiry = zclock_time() + wrk_it->heartbeat_ivl;
 			}
-			wrk = (worker_t*) zlist_next(svc->avail_workers);
-			continue;
-
+			if(iterate) wrk_it = wrk_it++;
 		}
 	}
 }
@@ -106,7 +106,7 @@ void titanic_dispatcher::Enqueue(string uuid,string svc,zmsg_t* opaque_frms){
 	if(serv->avail_count==0){
 		//We queue it and expect someone to pick it up later from the msg directory.
 		serv->req2.push_back(uuid);
-		zlist_append(serv->requests, &uuid);
+		serv->requests.push_back(uuid);
 		zmsg_destroy(&opaque_frms);
 	}
 	else{
@@ -122,7 +122,12 @@ void titanic_dispatcher::Dequeue(string uuid,string svc){
 		service_t* s = this->Svcs.find(svc)->second;
 		//I am pretty sure that this is going to have to be changed to a hash_set
 		//I think that this is more than likely going to be slow. ugh.
-		zlist_remove(s->requests,&svc);
+		for (int i=0; i < s->requests.size(); i++){
+			if(s->requests[i]==uuid){
+				s->requests.erase(s->requests.begin()+i);
+				break;
+			}
+		}
 	}
 }
 
@@ -136,13 +141,13 @@ void titanic_dispatcher::Services_Purge(void){
 	for (; svcs_iter != Svcs.end(); ++svcs_iter){
 		service = svcs_iter->second;
 
-		if (0 != service->avail_count){
+		if (service->avail_workers.size()!=0){
 			workers_purge(service->avail_workers); //Clean up the service parts.
 			break;                  //  Services are around to accept requests.
 		}
 
 		//now that we have 
-		if(0==service->avail_workers){
+		if(service->avail_workers.size()==0){
 			if (this->Verbose)
 				zclock_log ("I: deleting expired service: %s",service->name);
 			string key;
@@ -167,13 +172,7 @@ void titanic_dispatcher::service_add(string name){
 void titanic_dispatcher::service_del(string name){
 	//string key = name->substr(0,name->length()); 
 	service_t* svc = (this->Svcs.find(name) ->second);
-	
-	//Clean up the workers.
-	int i = 0;
-	while(svc->avail_count !=0){
-		worker_t* w = (worker_t*) zlist_next(svc->avail_workers);
-		this->worker_del(w);
-	}
+	svc->avail_workers.clear();
 	this->Svcs.erase(name);
 	
 	delete svc;
@@ -182,11 +181,11 @@ void titanic_dispatcher::service_del(string name){
 
 //this is called before work is dispatched to ensure we dont have any dead workers.
 worker_t* titanic_dispatcher::worker_get(service_t* serv){
-	worker_t* wrk =  (worker_t*) zlist_pop( serv->avail_workers);
-	serv->avail_count--;
+	worker_t* wrk =&serv->avail_workers.front();
+	serv->avail_workers.pop_front();
 	return wrk;
 }
-void titanic_dispatcher::workers_purge(zlist_t* workers){
+void titanic_dispatcher::workers_purge(deque<worker_t> workers){
 	worker_t *worker = (worker_t *) zlist_first (workers);
 	//This whole thing doesnt look like it ever gets to the end of the list
 	//double check this whole thing.
@@ -228,12 +227,10 @@ void titanic_dispatcher::worker_add(string svcname,zframe_t* addr,INT_ hbeatby){
 	service_t* svc = (this->Svcs.find(key) ->second);
 	char* w_name =zframe_strdup(addr);
 	string wrk_id = string(w_name);
-	worker_t* n_wrk = new worker_t(wrk_id,addr,svc,hbeatby);
-	
-	zlist_append( svc->avail_workers,n_wrk);
-	svc->avail_count++;
-
-
+	//worker_t* n_wrk = new worker_t(wrk_id,addr,svc,hbeatby);
+	worker_t n_wrk (wrk_id,addr,svc,hbeatby);
+	svc->avail_workers.push_back(n_wrk);
+	//zlist_append( svc->avail_workers,n_wrk);
 }
 
 void titanic_dispatcher::send_work(worker_t* worker,char *command,char *option,char* uuid, zmsg_t *msg){
