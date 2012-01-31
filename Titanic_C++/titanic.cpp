@@ -15,10 +15,14 @@
 
 int _tmain(int argc, _TCHAR* argv[])
 {
+	/*titanic_dispatcher* dis = new titanic_dispatcher(TADD_PUB,10000,10000,NULL);
+	dis->Test();*/
+
 	//we can instantiate this so that its binds up to all the sockets that we need
 	//in the constructor.
 	titanic_broker* broker = new titanic_broker(TADD_PUB,TADD_PRIV,1);
 	
+
 	//zthread_new(start_request,broker->Context);
 	//zthread_new(start_reply,broker->Context);
 	//zthread_new(start_finalize,broker->Context);

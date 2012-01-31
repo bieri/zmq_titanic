@@ -36,6 +36,7 @@ void titanic_publish::Start(){
 		char* uuid = zmsg_popstr(incoming);
 		cout << "Publishing :" << uuid << "  \n\r";
 		zmsg_pushstr(incoming,uuid);
+		//zclock_sleep(10);
 		zmsg_send(&incoming,this->pub_socket);
         zmsg_destroy (&incoming);
     }

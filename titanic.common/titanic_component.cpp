@@ -92,7 +92,7 @@ zmsg_t* titanic_component::get_work(){
 	while (TRUE) {
         zmq_pollitem_t items [] = {
             { this->Pipe,  0, ZMQ_POLLIN, 0 } };
-        int rc = zmq_poll (items, 1, this->HeartBeat_Ivl* ZMQ_POLL_MSEC);
+        int rc = zmq_poll (items, 1, 10* ZMQ_POLL_MSEC);
         if (rc == -1)
             break;              //  Interrupted
 

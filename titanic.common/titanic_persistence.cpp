@@ -5,6 +5,7 @@
 #include <uuids.h>
 #include <iostream>
 #include <fstream>
+#include <string>
 #include "tmsg_api.h"
 
 using namespace std;
@@ -76,11 +77,21 @@ namespace titanic_persistence{
 	}
 
 	zmsg_t* get(char* msgtype,char* uuid){
+		zmsg_t* m = zmsg_new();
+
 		string fn = titanic_persistence::get_filename(msgtype,uuid);	
-		FILE * f  = fopen(fn.c_str(),"r+");
-		zmsg_t* fs = zmsg_load(NULL,f);
-		fclose(f);
-		return fs;
+		ifstream f (fn);
+		//FILE * f  = fopen(fn.c_str(),"r+");
+		string line;
+		if(f.is_open()){
+			while(f.good()){
+				getline(f,line);
+				zframe_t* frm = zframe_new(line.c_str(),strlen(line.c_str()));
+				zmsg_add(m,frm);
+			}
+			f.close();
+		}
+		return m;
 	}
 
 	string get_filename(char* msgtype,char* uuid){

@@ -27,9 +27,9 @@ zmsg_t*  process_message(zmsg_t* msg){
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	zclock_sleep(15000);
+	zclock_sleep(1000);
 	char* broker_loc = "tcp://localhost:5555";
-	titanic_worker* worker = new titanic_worker(broker_loc,10000);
+	titanic_worker* worker = new titanic_worker(broker_loc,"Echo",10000);
 	while(TRUE){
 		zmsg_t* req_msg = worker->get_work();
 		zmsg_t* rep_msg = process_message(req_msg);

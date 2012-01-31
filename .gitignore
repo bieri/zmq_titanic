@@ -19,3 +19,8 @@
 /titanic_echo_worker/x64
 /Save Deleted
 *.suo
+/titanic.common/Release
+/titanic.publish/x64
+/titanic.publish/Release
+/titanic.publish/Debug
+/Titanic_C++/Release
