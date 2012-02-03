@@ -68,23 +68,53 @@ titanic_dispatcher::~titanic_dispatcher(void)
 void titanic_dispatcher::Start(){
 	
 }
-
+string titanic_dispatcher::envelope_strdup(zframe_t* self){
+	assert (self);
+    byte *data = zframe_data (self);
+    size_t size = zframe_size (self);
+	string ret_str ("");
+	char* ret =(char*) malloc(sizeof(char)*size);
+    int is_bin = 0;
+    uint char_nbr;
+    for (char_nbr = 0; char_nbr < size; char_nbr++)
+        if (data [char_nbr] < 9 || data [char_nbr] > 127)
+            is_bin = 1;
+    
+    for (char_nbr = 0; char_nbr < size; char_nbr++) {
+        if (is_bin){
+             sprintf (ret, "%02X", (unsigned char) data [char_nbr]);
+			ret_str.append(ret);
+		}
+        else{
+			sprintf (ret, "%c", data [char_nbr]);
+			ret_str.append(ret);
+		}
+    }
+    return ret_str;
+}
 void titanic_dispatcher::Handle_HeartBeat(zframe_t* address,string svcname){
+	//zframe_print (address, "");
+	
 	Hash_str_svc::iterator i = this->Svcs.find(svcname);
 	if(i==this->Svcs.end()){
 		worker_add(svcname,address,TWRK_HBT_IVL);
 	}
 	else{
 		service_t* svc = (i)->second;
-		const char* w_name = (const char*) zframe_strdup(address);
-		
-		bool iterate = true;
+		string address_s = envelope_strdup(address);
+		bool found_worker = false;
 		for(int ii=0;ii<svc->avail_workers.size();ii++){
 			const char* w_id = svc->avail_workers[ii]->identity.c_str();
-			if(strcmp(w_id,w_name )==0){
+			if(strcmp(w_id,address_s.c_str() )==0){
 				svc->avail_workers[ii]->expiry = zclock_time() + svc->avail_workers[ii]->heartbeat_ivl;
+				break;
 			}
 		}
+
+		if(!found_worker){
+			worker_add(svcname,address,TWRK_HBT_IVL);
+		}
+
 		/*while(iterate){
 			iterate = wrk_it != svc->avail_workers.end();
 			const char* w_id = wrk_it->identity.c_str();
@@ -114,7 +144,7 @@ void titanic_dispatcher::Enqueue(string uuid,string svc,zmsg_t* opaque_frms){
 	}
 	else{
 		worker_t* wrk = this->worker_get(serv);
-		this->work_status_set(wrk->identity,uuid);
+		this->work_status_set(wrk,uuid);
 		this->send_work(wrk,TMSG_TYPE_REQUEST,(char*)svc.c_str(),(char*)uuid.c_str(),opaque_frms);
 	}
 }
@@ -146,19 +176,22 @@ void titanic_dispatcher::Services_Purge(void){
 
 		if (service->avail_workers.size()!=0){
 			workers_purge(&service->avail_workers); //Clean up the service parts.
-			break;                  //  Services are around to accept requests.
+			                  //  Services are around to accept requests.
 		}
 
 		//now that we have 
-		if(service->avail_workers.size()==0 && service->requests.size()==0){
-			if (this->Verbose)
-				zclock_log ("I: deleting expired service: %s",service->name);
-			string key;
-			key.assign(service->name);
-			svcs_iter++;
-			service_del (key);
-			
+		if(	service->avail_workers.size()==0 && 
+			service->requests.size()==0 && 
+			service->processing_request.size()==0){
+				if (this->Verbose)
+					zclock_log ("I: deleting expired service: %s",service->name);
+				string key;
+				key.assign(service->name);
+				svcs_iter++;
+				service_del (key);
+				continue;
 		}
+		svcs_iter++;
 	}
 	//make sure that we are checking the very lst one;
 	//if (service != NULL && service->avail_workers.size()!=0){
@@ -218,21 +251,6 @@ void titanic_dispatcher::workers_purge(deque<worker_t*>* workers){
 		delete wrk;
 		i--;
 	}
-	//worker_t *worker = (worker_t *) zlist_first (workers);
-	////This whole thing doesnt look like it ever gets to the end of the list
-	////double check this whole thing.
-	//
- //   while (worker) {
- //       if (zc  < (worker->expiry + 100)){
-	//		worker = (worker_t*) zlist_next(workers);
- //           continue;                  //  Worker is alive, we're done here
-	//	}
- //       if (this->Verbose){
- //           zclock_log ("I: deleting expired worker: %s",worker->identity);
-	//	}
-	//	this->worker_del(worker);
- //       worker = (worker_t *) zlist_next (workers);
- //   }
 }
 void titanic_dispatcher::worker_del(worker_t* worker){
 	
@@ -257,11 +275,35 @@ void titanic_dispatcher::worker_add(string svcname,zframe_t* addr,INT_ hbeatby){
 	string key;
 	key.assign(svcname);
 	service_t* svc = (this->Svcs.find(key) ->second);
+	
+	char* wName = (char*) malloc( zframe_size(addr));
+	zframe_print(addr,wName);
 	char* w_name =zframe_strdup(addr);
 	string wrk_id = string(w_name);
 	worker_t* n_wrk = new worker_t(wrk_id,addr,svc,hbeatby);
+	
+	if(svc->requests.size()!=0){
+		string uuid = svc->requests.front();
+		zmsg_t* msg = titanic_persistence::get(TMSG_TYPE_REQUEST,(char*)uuid.c_str());
+		char* e_fr = zmsg_popstr(msg);
+		char* e_fr1 = zmsg_popstr(msg);
+		char* e_fr2 = zmsg_popstr(msg);
+		char* e_fr3 = zmsg_popstr(msg);
+		char* svcname = zmsg_popstr(msg);
+		//char* cmd= zmsg_popstr(msg);
+		char* uuid_v = zmsg_popstr(msg);
+		/*if(uuid_v != uuid.c_str()){
+			throw exception("error getting queued work");
+		}*/
+		this->send_work(n_wrk,TMSG_TYPE_REQUEST,svcname,uuid_v,msg);
+		
+		//Clean Up
+		svc->requests.pop_front();
+		zmsg_destroy(&msg);
+		return;
+	}
+	
 	svc->avail_workers.push_back(n_wrk);
-
 
 	//worker_t n_wrk (wrk_id,addr,svc,hbeatby);
 	//zlist_append( svc->avail_workers,n_wrk);
@@ -287,59 +329,64 @@ void titanic_dispatcher::send_work(worker_t* worker,char *command,char *option,c
 }
 
 //We are setting the status to maintain state so we know if a worker dies what we need to do.
-void titanic_dispatcher::work_status_set(string workerid,string uuid){
-	Hash_wkrid_vuuid::iterator it =  this->working_workers.find(workerid);
-	if(it == this->working_workers.end()){
+void titanic_dispatcher::work_status_set(worker_t* wrk,string uuid){
+	wrk->service->processing_request.insert(pair<string,worker_t*>(uuid,wrk));
+	/*if(it == this->working_workers.end()){
 		Hash_str* uids = new Hash_str();
 		uids->insert(uuid);
 		this->working_workers[workerid]= uids;
 	}
 	else{
 		it->second->insert(uuid);
-	}
+	}*/
 }
 
 //This is used if a worker is killed for a heartbeating issue to reapportion the work. 
 //The work should definitely go back on the front of the queue.
-void titanic_dispatcher::work_status_clear(string workerid){
-	
-	Hash_wkrid_vuuid::iterator l_it = this->working_workers.find(workerid);
-	if(l_it!=this->working_workers.end()){
-		Hash_str* h_s = l_it->second;
+void titanic_dispatcher::work_status_clear(string svc,string uuid){
+	service_t* service =( this->Svcs.find(svc)->second);
+	Hash_str_wrkr::iterator it =  service->processing_request.find(uuid);
+	if(it!=service->processing_request.end()){
+		service->processing_request.erase(it);
+	}
+	//Hash_wkrid_vuuid::iterator l_it = this->working_workers.find(workerid);
+	//if(l_it!=this->working_workers.end()){
+	//	Hash_str* h_s = l_it->second;
 
-		//I definitely do not like this section of code. Listed at issue#2 at Git.
-		for (Hash_str::const_iterator it=h_s->begin(); it != h_s->end(); ++it){
-			this->work_requeue(string(it->c_str()));
-		}
-		this->working_workers.erase(l_it);
-	}			
+	//	//I definitely do not like this section of code. Listed at issue#2 at Git.
+	//	for (Hash_str::const_iterator it=h_s->begin(); it != h_s->end(); ++it){
+	//		this->work_requeue(string(it->c_str()));
+	//	}
+	//	this->working_workers.erase(l_it);
+	//}			
 }
 
 //This is used to clean up the state that is being maintained, since we are passing 
 //the particular request we have to assume that we are only going to be expiring one
 //atomic request that has either been completed or expired by the requester.
-void titanic_dispatcher::work_status_clear(string svcname,string workerid,string uuid){
-	//we are always hoping for a worker id. cheapest way to expire this thing in
-	//the current set up as well as the most frequently received way because  we normally are 
-	//going to recieve an expiration of a uuid when work has been completed.
-	if(!workerid.empty()){
-		Hash_wkrid_vuuid::iterator l_it = this->working_workers.find(workerid);
-		Hash_str* h_s = l_it->second;
-		if(h_s->count(uuid)==1){
-			l_it->second->erase(uuid);
-		}
-	}
-	else{
-		//This is only hit when a client is expiring a bit of work.
-		Hash_wkrid_vuuid::const_iterator it =  this->working_workers.begin();
-		for (; it != this->working_workers.end(); ++it){
-			if(it->second->count(uuid)==1){
-				it->second->erase(uuid);
-				break;
-			}
-		}
-	}
-}
+//void titanic_dispatcher::work_status_clear(string svcname,string workerid,string uuid){
+//	//we are always hoping for a worker id. cheapest way to expire this thing in
+//	//the current set up as well as the most frequently received way because  we normally are 
+//	//going to recieve an expiration of a uuid when work has been completed.
+//	if(!workerid.empty()){
+//		Hash_wkrid_vuuid::iterator l_it = this->working_workers.find(workerid);
+//		Hash_str* h_s = l_it->second;
+//		if(h_s->count(uuid)==1){
+//			l_it->second->erase(uuid);
+//		}
+//	}
+//	else{
+//		//This is only hit when a client is expiring a bit of work.
+//		Hash_wkrid_vuuid::const_iterator it =  this->working_workers.begin();
+//		for (; it != this->working_workers.end(); ++it){
+//			if(it->second->count(uuid)==1){
+//				it->second->erase(uuid);
+//				break;
+//			}
+//		}
+//	}
+//}
+
 void titanic_dispatcher::work_requeue(string uuid){
 	//Since we will never have a service when this is called. We will go and fetch the message from the 
 	//persistence layer and then pop off the Service Frame. Once we have that we can call the Enqueue bit.
@@ -362,7 +409,7 @@ void titanic_dispatcher::work_requeue(string uuid){
 	}
 	else{
 		worker_t* wrk = this->worker_get(serv);
-		this->work_status_set(wrk->identity,uuid);
+		this->work_status_set(wrk,uuid);
 		this->send_work(wrk,TMSG_TYPE_REQUEST,(char*)serv->name.c_str(),(char*) uuid.c_str(),msg);
 	}
 }
@@ -445,10 +492,10 @@ void titanic_dispatcher::Test(void){
 	this->work_status_set(wrk__->identity,uuid);
 	this->work_status_clear(wrk__->identity);*/
 
-	this->work_status_set(wrk__->identity,uuid);
-	this->work_status_clear(string(""),wrk__->identity,uuid);
-	this->work_status_set(wrk__->identity,uuid);
-	this->work_status_clear(wrk__->service->name,string(""),uuid);
+	this->work_status_set(wrk__,uuid);
+	this->work_status_clear(wrk__->service->name,uuid);
+	this->work_status_set(wrk__,uuid);
+	this->work_status_clear(wrk__->service->name,uuid);
 
 
 	this->Enqueue(uuid,wrk__->service->name,zmsg_new());

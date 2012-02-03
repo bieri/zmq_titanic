@@ -113,7 +113,7 @@ void titanic_broker::Start(void){
         printf ("W: interrupt received, shutting down…\n");
 }
 void titanic_broker::process_msg(zmsg_t* msg){
-	zframe_t* envelope = zmsg_unwrap(msg);  //address and empty frame.
+	zframe_t* envelope = zmsg_unwrap(msg);	//address and empty frame.
     char* origin = zmsg_popstr (msg);		//origin frame.
     char* service = zmsg_popstr (msg);		//service frame.
     char* command = zmsg_popstr (msg);		//command frame.

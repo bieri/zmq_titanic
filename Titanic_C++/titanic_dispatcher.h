@@ -11,7 +11,11 @@
 using namespace std;
 
 
+
 class service_t;
+
+
+
 //class worker_t;
 class worker_t {
 public:
@@ -25,6 +29,11 @@ public:
 	INT_ heartbeat_ivl;			// Like it says
 };
 
+typedef hash_set<string> Hash_str;
+typedef hash_map<string,service_t*> Hash_str_svc;
+typedef hash_map<string,worker_t*> Hash_str_wrkr;
+typedef hash_map<string,Hash_str*> Hash_wkrid_vuuid;
+
 class service_t {
 public:
 	service_t(string name);
@@ -34,13 +43,10 @@ public:
 	string name;					//  Service name
 	deque<string> requests;			//	UUIDs of strings that need to be distributed.
 	deque<worker_t*> avail_workers;	//	List of workers that are available to receive work.
-    //size_t avail_count;             //  Number of workers that are available.
+	Hash_str_wrkr processing_request;
 };
 
-typedef hash_set<string> Hash_str;
-typedef hash_map<string,service_t*> Hash_str_svc;
-typedef hash_map<string,worker_t*> Hash_str_wrkr;
-typedef hash_map<string,Hash_str*> Hash_wkrid_vuuid;
+
 
 #pragma endregion Includes service_t, worker_t and various typedefs
 
@@ -72,7 +78,7 @@ public:
 private:
 	//Properties
 	Hash_str_svc Svcs;
-	Hash_wkrid_vuuid working_workers;
+//	Hash_wkrid_vuuid working_workers;
 	void* socket;
 
 	//Methods
@@ -88,10 +94,10 @@ private:
 
 	void send_work(worker_t* worker,char *command,char *option,char* uuid, zmsg_t *msg);
 	
-	void work_status_set(string workerid,string uuid);
-	void work_status_clear(string workerid);
-	void work_status_clear(string svcname,string workerid,string uuid);
+	void work_status_set(worker_t* wrk,string uuid);
+	void work_status_clear(string svc, string uuid);
 	void work_requeue(string uuid);
+	string envelope_strdup(zframe_t* frame);
 };
 
 
