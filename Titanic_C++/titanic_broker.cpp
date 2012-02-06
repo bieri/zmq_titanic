@@ -199,7 +199,6 @@ void titanic_broker::message_from_component(zmsg_t* msg,zframe_t* envelope,char*
 		zmsg_send(&msg,this->Z_Sckt);
 	}
 }
-
 void titanic_broker::message_from_worker(zmsg_t* msg,zframe_t* envelope,char* origin,char* service,char* command,char*uuid){
 	
 	if(strcmp(command,TMSG_TYPE_READY)==0){
@@ -209,6 +208,7 @@ void titanic_broker::message_from_worker(zmsg_t* msg,zframe_t* envelope,char* or
 		this->Dispatcher->Handle_HeartBeat(envelope,string(service));
 	}
 	else if(strcmp(command,TMSG_TYPE_REPLY)==0){
+		zmsg_dump(msg);
 		//Need to mark this as completed.
 		char* uuid = zmsg_popstr(msg);
 		this->Dispatcher->Dequeue(string(uuid),string(service));

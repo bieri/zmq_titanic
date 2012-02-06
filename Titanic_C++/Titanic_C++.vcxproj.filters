@@ -40,7 +40,7 @@
     <None Include="icon4.ico">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="C:\steamer_256.ico">
+    <None Include="steamer_256.ico">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

@@ -84,7 +84,7 @@ private:
 	//Methods
 	void workers_purge(deque<worker_t*>* workers);
 	void worker_add(string svcname,zframe_t* address,INT_ hbeatby);
-	void worker_del(worker_t* worker);
+	//void worker_del(worker_t* worker);
 	worker_t* worker_get(service_t* svcname);
 
 	

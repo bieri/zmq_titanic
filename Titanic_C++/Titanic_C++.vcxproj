@@ -156,7 +156,6 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="C:\steamer_256.ico" />
     <None Include="C:\Users\kevin.bieri\Downloads\steamer_128.png" />
     <None Include="C:\Users\kevin.bieri\Downloads\steamer_16.png" />
     <None Include="C:\Users\kevin.bieri\Downloads\steamer_24.png" />
@@ -166,6 +165,7 @@
     <None Include="C:\Users\kevin.bieri\Downloads\steamer_64.png" />
     <None Include="icon4.ico" />
     <None Include="ReadMe.txt" />
+    <None Include="steamer_256.ico" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h" />
