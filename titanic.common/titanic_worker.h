@@ -19,7 +19,7 @@ public:
 	int32_t Heartbeat_At;
 	int64_t Heartbeat_Ivl;
 	char* Broker_Address;
-
+	
 private:
 
 	bool has_connected;

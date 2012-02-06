@@ -32,7 +32,7 @@ zmsg_t* titanic_worker::get_work(void){
             { this->Socket,  0, ZMQ_POLLIN, 0 }
 			};
 
-        int rc = zmq_poll (items,1 ,1000  * ZMQ_POLL_MSEC);
+        int rc = zmq_poll (items,1 ,10  * ZMQ_POLL_MSEC);
 		if (items [0].revents & ZMQ_POLLIN) {
 			zmsg_t *msg = zmsg_recv (this->Socket);
             if (!msg)
@@ -111,3 +111,4 @@ void titanic_worker::append_framing(zmsg_t* msg,char* command,char* uuid){
 	zmsg_pushstr(msg,"titanic.frontend");*/
 	
 }
+
