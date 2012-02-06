@@ -5,6 +5,7 @@
 *.sdf
 /_ReSharper.Titanic_C++
 *.user
+*.filters
 /Debug
 /titanic.common/x64
 /titanic.common/Debug
@@ -23,4 +24,8 @@
 /titanic.publish/x64
 /titanic.publish/Release
 /titanic.publish/Debug
+/Titanic_C++/Release
+/titanic.audit/Release
+/titanic.audit/x64
+/titanic.audit/Debug
 /Titanic_C++/Release
