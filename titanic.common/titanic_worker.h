@@ -1,10 +1,14 @@
 #include "stdafx.h"
+#include <zmq.h>
+#include <czmq.h>
+#include <iostream>
 #pragma once
 
 
 class __declspec(dllexport) titanic_worker
 {
 public:
+	titanic_worker(void);
 	titanic_worker(char* broker_address,char* svcname,int64_t ivl);
 	~titanic_worker(void);
 	
@@ -19,7 +23,7 @@ public:
 	int32_t Heartbeat_At;
 	int64_t Heartbeat_Ivl;
 	char* Broker_Address;
-	
+
 private:
 
 	bool has_connected;
@@ -29,4 +33,3 @@ private:
 	char* strip_framing(zmsg_t* msg);
 	void append_framing(zmsg_t* msg,char* command,char* uuid);
 };
-

@@ -5,7 +5,7 @@
 #define TADD_COMP "tcp://127.0.0.1:5556" //This one is for the components to use.
 #define TADD_PUBSUB "tcp://*:5557"
 #define TADD_AUDIT "tcp://*:5558"
-#define TMSG_DIR "E:\\titanic.messages"
+#define TMSG_DIR "C:\\working\\titanic.messages"
 
 #define TWRK_SVC_VER "TITS01"
 #define TWRK_CLI_VER "TITC01"

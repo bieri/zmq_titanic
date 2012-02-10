@@ -23,7 +23,6 @@ void titanic_audit::Start()
     zmsg_t *msg = this->get_work();
     if (!msg) break; // EXIT: interrupted
 
-    zmsg_pushstr(msg,"titanic.audit"); //TODO: better message topic(s)
     zmsg_send(&msg,this->pub_socket);
     zmsg_destroy(&msg);
   }
